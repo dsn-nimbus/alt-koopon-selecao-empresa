@@ -1,0 +1,35 @@
+{
+  "name": "alt-koopon-selecao-empresa",
+  "main": "dist/alt-koopon-selecao-empresa.min.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/dsn-nimbus/alt-koopon-selecao-empresa.git",
+  "authors": [
+    "dsn-nimbus <ericdantas0@gmail.com>"
+  ],
+  "description": "desc",
+  "keywords": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    ".idea",
+    ".gitignore",
+    "node_modules",
+    "tests",
+    "src",
+    "LICENSE",
+    "bower_components",
+    "coverage",
+    "gulpfile.js",
+    "package.json",
+    "*.conf.js"
+  ],
+  "dependencies": {
+    "angular": ">=1.0.8",
+    "angular-resource": "~1.4.7",
+    "alt-alerta-flutuante": "~0.0.4",
+    "alt-passaporte-usuario-logado": "~0.0.1"
+  },
+  "devDependencies": {
+    "angular-mocks": ">=1.0.8"
+  }
+}
