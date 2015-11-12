@@ -1,7 +1,7 @@
 "use strict";
 
 describe('alt.koopon.selecao-empresa', function() {
-  var _rootScope, _scope, _q, _httpBackend, _locationMock, _xtorage,
+  var _rootScope, _scope, _http, _q, _httpBackend, _locationMock, _xtorage,
   _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager;
 
   beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider) {
@@ -12,6 +12,7 @@ describe('alt.koopon.selecao-empresa', function() {
     _rootScope = $injector.get('$rootScope');
     _scope = _rootScope.$new();
     _q = $injector.get('$q');
+    _http = $injector.get('$http');
     _httpBackend = $injector.get('$httpBackend');
     _xtorage = $injector.get('$xtorage');
 
@@ -27,6 +28,49 @@ describe('alt.koopon.selecao-empresa', function() {
     spyOn(_xtorage, 'save').and.callFake(angular.noop);
     spyOn(_xtorage, 'get').and.callFake(angular.noop);
   }));
+
+  describe('interceptor', function() {
+    var URL = '/api/qqcoisa';
+
+    describe('seleção empresa', function() {
+      it('não deve redirecionar, resposta ok - não deve chamar troca de rota', function() {
+        _httpBackend.expectGET(URL).respond(200);
+
+        _http.get(URL);
+
+        expect(_locationMock.path).not.toHaveBeenCalled();
+      });
+
+      it('deve retornar uma promessa com a rejeição do servidor - 400 - não deve chamar troca de rota', function() {
+        _httpBackend.expectGET(URL).respond(400);
+
+        _http.get(URL);
+
+        _httpBackend.flush();
+        expect(_locationMock.path).not.toHaveBeenCalled();
+      });
+
+      it('deve retornar uma promessa com a rejeição do servidor - 403 - não deve chamar troca de rota', function() {
+        _httpBackend.expectGET(URL).respond(403, {deveSelecionarEmpresa: false});
+
+        _http.get(URL);
+
+        _httpBackend.flush();
+
+        expect(_locationMock.path).not.toHaveBeenCalled();
+      });
+
+      it('deve retornar uma promessa com a rejeição do servidor - 403 - deve chamar troca de rota', function() {
+        _httpBackend.expectGET(URL).respond(403, {deveSelecionarEmpresa: true});
+
+        _http.get(URL);
+
+        _httpBackend.flush();
+
+        expect(_locationMock.path).toHaveBeenCalledWith('/selecao-empresas');
+      });
+    });
+  });
 
   describe('service', function() {
     var URL_BASE = '/koopon-contador-rest-api/assinantes/selecao';
