@@ -111,6 +111,14 @@ describe('alt.koopon.selecao-empresa', function() {
 
         expect(_xtorage.get).toHaveBeenCalledWith('emp_escolhida');
       });
+
+      it('deve chamar o método com os parâmetros corretos - chave diferente', function() {
+        var _emp = {a: true};
+
+        _AltKooponEmpresaService.getEmpresaEscolhidaDaStorage('abc');
+
+        expect(_xtorage.get).toHaveBeenCalledWith('abc');
+      });
     });
 
     describe('salvaNaStorageEmpresaEscolhida', function() {
@@ -120,6 +128,14 @@ describe('alt.koopon.selecao-empresa', function() {
         _AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(_emp);
 
         expect(_xtorage.save).toHaveBeenCalledWith('emp_escolhida', _emp);
+      });
+
+      it('deve chamar o método com os parâmetros corretos - chave diferente', function() {
+        var _emp = {a: true};
+
+        _AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(_emp, 'abc');
+
+        expect(_xtorage.save).toHaveBeenCalledWith('abc', _emp);
       });
     });
 
@@ -200,11 +216,13 @@ describe('alt.koopon.selecao-empresa', function() {
       }));
     });
 
-    describe('onLoad', function() {
+    describe('init', function() {
       it('deve tentar buscar as empresas, mas o serviço retorna undefined', inject(function ($controller) {
         spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(undefined);
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
+
+        _scope.akseCtrl.init();
 
         expect(_scope.akseCtrl.empresas).toEqual([]);
       }));
@@ -215,6 +233,8 @@ describe('alt.koopon.selecao-empresa', function() {
         spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
+
+        _scope.akseCtrl.init();
 
         expect(_scope.akseCtrl.empresas).toEqual(_empresas);
         expect(_locationMock.path).not.toHaveBeenCalled();
@@ -228,6 +248,8 @@ describe('alt.koopon.selecao-empresa', function() {
         });
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
+
+        _scope.akseCtrl.init();
 
         _rootScope.$digest();
 
@@ -245,9 +267,30 @@ describe('alt.koopon.selecao-empresa', function() {
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
 
+        _scope.akseCtrl.init();
+
         _rootScope.$digest();
 
         expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+        expect(_locationMock.path).toHaveBeenCalledWith('/');
+        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+      }));
+
+      it('deve buscar apenas uma empresa, buscando com a propriedade passada por parâmetro', inject(function($controller) {
+        var _empresa = [{nome: 'a', id: 1}];
+        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+          return _q.when({ok: true});
+        });
+
+        $controller(NOME_CONTROLLER, {$scope: _scope});
+
+        _scope.akseCtrl.init('a');
+
+        _rootScope.$digest();
+
+        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+        expect(_AltKooponEmpresaService.getEmpresas).toHaveBeenCalledWith('a');
         expect(_locationMock.path).toHaveBeenCalledWith('/');
         expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
       }));

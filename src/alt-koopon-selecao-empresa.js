@@ -54,12 +54,16 @@
       return AltPassaporteUsuarioLogadoManager.retorna()[_nomeProp];
     };
 
-    AltKooponEmpresaService.prototype.salvaNaStorageEmpresaEscolhida = function(empresa) {
-      $xtorage.save(CHAVE_STORAGE_EMPRESA_ESCOLHIDA, empresa);
+    AltKooponEmpresaService.prototype.salvaNaStorageEmpresaEscolhida = function(empresa, chave) {
+      var _chave = chave || CHAVE_STORAGE_EMPRESA_ESCOLHIDA;
+
+      $xtorage.save(_chave, empresa);
     };
 
-    AltKooponEmpresaService.prototype.getEmpresaEscolhidaDaStorage = function() {
-      return $xtorage.get(CHAVE_STORAGE_EMPRESA_ESCOLHIDA);
+    AltKooponEmpresaService.prototype.getEmpresaEscolhidaDaStorage = function(chave) {
+      var _chave = chave || CHAVE_STORAGE_EMPRESA_ESCOLHIDA;
+
+      return $xtorage.get(_chave);
     };
 
     AltKooponEmpresaService.prototype.escolhe = function(empresa) {
@@ -101,12 +105,12 @@
       self._escolheEmpresa(empresa);
     };
 
-    ;(function() {
-      self.empresas = AltKooponEmpresaService.getEmpresas() || self.empresas;
+    self.init = function(emp) {
+      self.empresas = AltKooponEmpresaService.getEmpresas(emp) || self.empresas;
 
       if (self.empresas.length === 1) {
         self._escolheEmpresa(self.empresas[0]);
       }
-    }());
+    };
   }]);
 }(window.angular));
