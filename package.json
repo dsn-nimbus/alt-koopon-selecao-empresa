@@ -1,6 +1,6 @@
 {
   "name": "alt-koopon-selecao-empresa",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "dist/alt-koopon-selecao-empresa.min.js",
   "scripts": {
     "test": "gulp coverage"
