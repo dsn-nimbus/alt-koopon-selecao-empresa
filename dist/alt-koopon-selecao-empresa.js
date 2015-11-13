@@ -48,8 +48,10 @@
 
     };
 
-    AltKooponEmpresaService.prototype.getEmpresas = function() {
-      return AltPassaporteUsuarioLogadoManager.retorna().assinantes;
+    AltKooponEmpresaService.prototype.getEmpresas = function(nomeProp) {
+      var _nomeProp = nomeProp || 'assinantes';
+
+      return AltPassaporteUsuarioLogadoManager.retorna()[_nomeProp];
     };
 
     AltKooponEmpresaService.prototype.salvaNaStorageEmpresaEscolhida = function(empresa) {

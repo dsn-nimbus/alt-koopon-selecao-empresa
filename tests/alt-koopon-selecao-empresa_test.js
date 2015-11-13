@@ -91,6 +91,16 @@ describe('alt.koopon.selecao-empresa', function() {
 
         expect(_AltKooponEmpresaService.getEmpresas()).toEqual(_empreas);
       });
+
+      it('deve chamar o método correto', function() {
+        var _empreas = [1, 2, 3];
+
+        spyOn(_AltPassaporteUsuarioLogadoManager, 'retorna').and.returnValue({
+          'outro-nome': _empreas
+        });
+
+        expect(_AltKooponEmpresaService.getEmpresas('outro-nome')).toEqual(_empreas);
+      });
     });
 
     describe('getEmpresaEscolhidaDaStorage', function() {
