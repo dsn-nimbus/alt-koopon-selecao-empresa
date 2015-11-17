@@ -104,7 +104,7 @@
         AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
       })
       .finally(function() {
-        AltCarregandoInfoService.exibe();
+        AltCarregandoInfoService.esconde();
       });
     };
 
