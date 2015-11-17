@@ -4,7 +4,8 @@
   ng.module('alt.koopon.selecao-empresa', [
     'ngResource',
     'alt.passaporte-usuario-logado',
-    'alt.alerta-flutuante'
+    'alt.alerta-flutuante',
+    'alt.carregando-info'
   ])
   .config(['$httpProvider', function($httpProvider) {
     $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
@@ -84,12 +85,15 @@
 
     return new AltKooponEmpresaService();
   }])
-  .controller('AltKooponSelecaoEmpresasController', ['$location', 'AltKooponEmpresaService', 'AltAlertaFlutuanteService', function($location, AltKooponEmpresaService, AltAlertaFlutuanteService) {
+  .controller('AltKooponSelecaoEmpresasController', ['$location', 'AltKooponEmpresaService', 'AltAlertaFlutuanteService', 'AltCarregandoInfoService',
+  function($location, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService) {
     var self = this;
 
     self.empresas = [];
 
     self._escolheEmpresa = function(empresa) {
+      AltCarregandoInfoService.exibe();
+
       AltKooponEmpresaService
       .escolhe(empresa)
       .then(function() {
@@ -98,6 +102,9 @@
       })
       .catch(function(erro) {
         AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
+      })
+      .finally(function() {
+        AltCarregandoInfoService.exibe();
       });
     };
 

@@ -19,6 +19,7 @@ module.exports = function(config) {
       'bower_components/angular-resource/angular-resource.js',
       'bower_components/alt-alerta-flutuante/dist/alt-alerta-flutuante.min.js',
       'bower_components/alt-passaporte-usuario-logado/dist/alt-passaporte-usuario-logado.min.js',
+      'bower_components/alt-carregando-info/dist/alt-carregando-info.min.js',
       'bower_components/ng-xtorage/ng-xtorage.min.js',
 
       'bower_components/angular-mocks/angular-mocks.js',
