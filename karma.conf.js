@@ -15,11 +15,14 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'bower_components/lodash/lodash.min.js',
       'bower_components/angular/angular.js',
       'bower_components/angular-resource/angular-resource.js',
       'bower_components/alt-alerta-flutuante/dist/alt-alerta-flutuante.min.js',
       'bower_components/alt-passaporte-usuario-logado/dist/alt-passaporte-usuario-logado.min.js',
+      'bower_components/alt-passaporte-procuracao/dist/alt-passaporte-procuracao.min.js',
       'bower_components/alt-carregando-info/dist/alt-carregando-info.min.js',
+      'bower_components/alt-passaporte-informacoes-autorizacao/dist/alt-passaporte-informacoes-autorizacao.min.js',
       'bower_components/ng-xtorage/ng-xtorage.min.js',
 
       'bower_components/angular-mocks/angular-mocks.js',
