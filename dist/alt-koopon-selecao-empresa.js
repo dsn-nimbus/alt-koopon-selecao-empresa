@@ -100,12 +100,18 @@
                     .then(function(usuario) {
                       var _usuario = angular.copy(usuario);
 
-                      _usuario.assinantesEmpresa = usuario.assinantes;
+                      _usuario.assinantesEmpresa = usuario.assinantes || [];
+                      _usuario.assinantes.length = 0;
 
                       var _usuarioStorage = AltPassaporteUsuarioLogadoManager.retorna();
 
-                      _usuario.assinantes.length = 0;
-                      _usuarioStorage.assinantes.length = 0;
+                      if (ng.isArray(_usuarioStorage.assinantes)) {
+                       _usuarioStorage.assinantes.length = 0;
+                      }
+
+                      if (ng.isArray(_usuarioStorage.assinantesEmpresa)) {
+                        _usuarioStorage.assinantesEmpresa.length = 0;
+                      }
 
                       var _usuarioMerge = _.merge(_usuario, _usuarioStorage);
 

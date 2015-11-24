@@ -221,6 +221,11 @@ describe('alt.koopon.selecao-empresa', function() {
       it('deve chamar o metodo com os parâmetros corretos', function() {
         var _empresa = {id: 1};
 
+        spyOn(_AltPassaporteUsuarioLogadoManager, 'retorna').and.returnValue({
+          assinantes: [],
+          assinantesEmpresa: []
+        })
+
         spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
           return _q.when({assinantes: []});
         });
