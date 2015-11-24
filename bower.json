@@ -1,7 +1,7 @@
 {
   "name": "alt-koopon-selecao-empresa",
   "main": "dist/alt-koopon-selecao-empresa.min.js",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "homepage": "https://github.com/dsn-nimbus/alt-koopon-selecao-empresa.git",
   "authors": [
     "dsn-nimbus <ericdantas0@gmail.com>"

@@ -90,13 +90,13 @@
 
     return new AltKooponEmpresaService();
   }])
-  .service('AltKooponSelecaoEmpresasHelper', ['$location', 'AltKooponEmpresaService', 'AltPassaporteUsuarioLogadoManager', 'AltPassaporteProcuracaoService', '_', function($location, AltKooponEmpresaService, AltPassaporteUsuarioLogadoManager, AltPassaporteProcuracaoService, _) {
+  .service('AltKooponSelecaoEmpresasHelper', ['$location', 'AltKooponEmpresaService', 'AltPassaporteUsuarioLogadoManager', 'AltPassaporteProcuracaoService', '_', 'ID_KOOPON_EMPRESA', 'ID_KOOPON_CONTADOR', function($location, AltKooponEmpresaService, AltPassaporteUsuarioLogadoManager, AltPassaporteProcuracaoService, _, ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR) {
     this.escolheEmpresaComProcuracao = function(empresa) {
       return AltKooponEmpresaService
         .escolhe(empresa)
         .then(function() {
           return AltPassaporteProcuracaoService
-                    .getInfo()
+                    .getInfo(empresa.id, ID_KOOPON_CONTADOR, ID_KOOPON_EMPRESA)
                     .then(function(usuario) {
                       var _usuario = angular.copy(usuario);
 
@@ -117,7 +117,7 @@
         })
     };
 
-    this.escolhaEmpresaSemProcuracao = function(empresa) {
+    this.escolheEmpresaSemProcuracao = function(empresa) {
         return AltKooponEmpresaService
           .escolhe(empresa)
           .then(function() {
@@ -136,7 +136,7 @@
       AltCarregandoInfoService.exibe();
 
       AltKooponSelecaoEmpresasHelper
-        .escolhaEmpresaSemProcuracao(empresa)
+        .escolheEmpresaSemProcuracao(empresa)
         .catch(function(erro) {
           AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
         })

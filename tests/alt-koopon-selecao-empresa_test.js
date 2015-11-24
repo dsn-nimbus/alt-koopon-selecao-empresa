@@ -3,7 +3,7 @@
 describe('alt.koopon.selecao-empresa', function() {
   var _rootScope, _scope, _http, _q, _httpBackend, _locationMock, _xtorage,
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
-      _AltPassaporteProcuracaoService;
+      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper;
 
   var ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR;
 
@@ -28,6 +28,7 @@ describe('alt.koopon.selecao-empresa', function() {
     _AltAlertaFlutuanteService = $injector.get('AltAlertaFlutuanteService');
     _AltKooponEmpresaService = $injector.get('AltKooponEmpresaService');
     _AltPassaporteProcuracaoService = $injector.get('AltPassaporteProcuracaoService');
+    _AltKooponSelecaoEmpresasHelper = $injector.get('AltKooponSelecaoEmpresasHelper');
 
     spyOn(_locationMock, 'path').and.callFake(angular.noop);
     spyOn(_AltAlertaFlutuanteService, 'exibe').and.callFake(angular.noop);
@@ -211,6 +212,45 @@ describe('alt.koopon.selecao-empresa', function() {
         .catch(function(){expect(true).toBe(false)});
 
         _httpBackend.flush();
+      });
+    });
+  });
+
+  describe('controller helper', function() {
+    describe('escolheEmpresaComProcuracao', function() {
+      it('deve chamar o metodo com os parâmetros corretos', function() {
+        var _empresa = {id: 1};
+
+        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+          return _q.when({assinantes: []});
+        });
+
+        spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
+          return _q.when({assinantes: []});
+        });
+
+        _AltKooponSelecaoEmpresasHelper.escolheEmpresaComProcuracao(_empresa);
+
+        _rootScope.$digest();
+
+        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa);
+        expect(_AltPassaporteProcuracaoService.getInfo).toHaveBeenCalledWith(_empresa.id, ID_KOOPON_CONTADOR, ID_KOOPON_EMPRESA);
+      });
+    });
+
+    describe('escolheEmpresaSemProcuracao', function() {
+      it('deve chamar o metodo com os parâmetros corretos', function() {
+        var _empresa = {id: 1};
+
+        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+          return _q.when({assinantes: []});
+        });
+
+        _AltKooponSelecaoEmpresasHelper.escolheEmpresaSemProcuracao(_empresa);
+
+        _rootScope.$digest();
+
+        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa);
       });
     });
   });
