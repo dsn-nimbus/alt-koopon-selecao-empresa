@@ -1,7 +1,7 @@
 {
   "name": "alt-koopon-selecao-empresa",
   "main": "dist/alt-koopon-selecao-empresa.min.js",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "homepage": "https://github.com/dsn-nimbus/alt-koopon-selecao-empresa.git",
   "authors": [
     "dsn-nimbus <ericdantas0@gmail.com>"
@@ -29,7 +29,7 @@
     "alt-alerta-flutuante": "~0.0.4",
     "alt-passaporte-usuario-logado": "~0.0.1",
     "alt-carregando-info": "~0.0.1",
-    "alt-passaporte-procuracao": "~0.0.1",
+    "alt-passaporte-procuracao": "~0.0.2",
     "lodash": "~3.10.1"
   },
   "devDependencies": {
