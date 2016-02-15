@@ -30,7 +30,6 @@ describe('alt.koopon.selecao-empresa', function() {
     _AltPassaporteProcuracaoService = $injector.get('AltPassaporteProcuracaoService');
     _AltKooponSelecaoEmpresasHelper = $injector.get('AltKooponSelecaoEmpresasHelper');
 
-    spyOn(_locationMock, 'path').and.callFake(angular.noop);
     spyOn(_AltAlertaFlutuanteService, 'exibe').and.callFake(angular.noop);
 
     spyOn(_xtorage, 'save').and.callFake(angular.noop);
@@ -49,33 +48,56 @@ describe('alt.koopon.selecao-empresa', function() {
 
     describe('seleção empresa', function() {
       it('não deve redirecionar, resposta ok - não deve chamar troca de rota', function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+
         _httpBackend.expectGET(URL).respond(200);
 
         _http.get(URL);
+
+        _httpBackend.flush();
 
         expect(_locationMock.path).not.toHaveBeenCalled();
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 400 - não deve chamar troca de rota', function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+
         _httpBackend.expectGET(URL).respond(400);
 
         _http.get(URL);
 
         _httpBackend.flush();
-        expect(_locationMock.path).not.toHaveBeenCalled();
+
+        expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 403 - não deve chamar troca de rota', function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+
         _httpBackend.expectGET(URL).respond(403, {deveSelecionarEmpresa: false});
 
         _http.get(URL);
 
         _httpBackend.flush();
 
-        expect(_locationMock.path).not.toHaveBeenCalled();
+        expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
+      });
+
+      it('deve retornar uma promessa com a rejeição do servidor - 403 - deve e não chamar troca de rota, url contém wizard', function() {
+        spyOn(_locationMock, 'path').and.returnValue('/abc/wizard');
+
+        _httpBackend.expectGET(URL).respond(403, {deveSelecionarEmpresa: true});
+
+        _http.get(URL);
+
+        _httpBackend.flush();
+
+        expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 403 - deve chamar troca de rota', function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+
         _httpBackend.expectGET(URL).respond(403, {deveSelecionarEmpresa: true});
 
         _http.get(URL);
@@ -88,6 +110,10 @@ describe('alt.koopon.selecao-empresa', function() {
   });
 
   describe('service', function() {
+    beforeEach(function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+    });
+
     var URL_BASE = '/koopon-contador-rest-api/assinantes/selecao';
 
     describe('criação', function() {
@@ -217,6 +243,10 @@ describe('alt.koopon.selecao-empresa', function() {
   });
 
   describe('controller helper', function() {
+    beforeEach(function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+    });
+
     describe('escolheEmpresaComProcuracao', function() {
       it('deve chamar o metodo com os parâmetros corretos', function() {
         var _empresa = {id: 1};
@@ -261,6 +291,10 @@ describe('alt.koopon.selecao-empresa', function() {
   });
 
   describe('controller', function() {
+    beforeEach(function() {
+        spyOn(_locationMock, 'path').and.returnValue('/');
+    });
+
     var NOME_CONTROLLER = 'AltKooponSelecaoEmpresasController as akseCtrl';
 
     describe('criação', function() {

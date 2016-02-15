@@ -1,13 +1,16 @@
 {
   "name": "alt-koopon-selecao-empresa",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "main": "dist/alt-koopon-selecao-empresa.min.js",
   "scripts": {
     "test": "gulp coverage"
   },
   "dependencies": {},
   "devDependencies": {
-    "babel": "^5.8.23",
+    "babel": "^5.8.35",
+    "babel-cli": "^6.5.1",
+    "babel-core": "^6.5.2",
+    "babel-preset-es2015": "^6.5.0",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.5.2",
     "gulp-coveralls": "^0.1.4",

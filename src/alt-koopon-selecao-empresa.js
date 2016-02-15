@@ -19,8 +19,9 @@
     return {
       responseError: function(rej) {
         var _deveSelecionarEmpresa = (!!rej) && (rej.status === 403) && (!!rej.data) && (rej.data.deveSelecionarEmpresa);
+        var _wizardUrl = !!~$location.path().indexOf('wizard');
 
-        if (_deveSelecionarEmpresa) {
+        if (_deveSelecionarEmpresa && !_wizardUrl) {
           $location.path('/selecao-empresas');
         }
 
