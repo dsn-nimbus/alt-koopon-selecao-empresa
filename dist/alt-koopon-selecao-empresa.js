@@ -15,17 +15,17 @@
     .constant('_', _)
     .constant('ID_KOOPON_EMPRESA', '60f1fe1f835b14a3d20ac0f046fac668')
     .constant('ID_KOOPON_CONTADOR', '3c59dc048e8850243be8079a5c74d079')
-    .constant('EventoEmpresa', {
+    .constant('AltKooponEventoEmpresa', {
       EVENTO_EMPRESA_ESCOLHIDA: 'empresa-escolhida',
       EVENTO_EMPRESA_NAO_CONFIGURADA: 'empresa-nao-configurada'
     })
-    .factory('AltKooponEmpresaNaoSelecionadaInterceptor', ['$rootScope', '$q', '$location', 'EventoEmpresa', function ($rootScope, $q, $location, EventoEmpresa) {
+    .factory('AltKooponEmpresaNaoSelecionadaInterceptor', ['$rootScope', '$q', '$location', 'AltKooponEventoEmpresa', function ($rootScope, $q, $location, AltKooponEventoEmpresa) {
       return {
         responseError: function(rej) {
           var _deveSelecionarEmpresa = (!!rej) && (rej.status === 403) && (!!rej.data) && (rej.data.deveSelecionarEmpresa);
           var _wizardUrl = !!~$location.path().indexOf('wizard');
 
-          $rootScope.$broadcast(EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
+          $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
 
           if (_deveSelecionarEmpresa && !_wizardUrl) {
             $location.path('/selecao-empresas');
@@ -54,8 +54,8 @@
 
       return $resource(_url, _params, _methods);
     }])
-    .factory('AltKooponEmpresaService', ['$rootScope','$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'EventoEmpresa',
-      function($rootScope, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, EventoEmpresa) {
+    .factory('AltKooponEmpresaService', ['$rootScope','$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa',
+      function($rootScope, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa) {
 
         var CHAVE_STORAGE_EMPRESA_ESCOLHIDA = 'emp_escolhida';
 
@@ -90,7 +90,7 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function(empresaEscolhida) {
-              $rootScope.$broadcast(EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA);
+              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA);
               return empresaEscolhida;
             })
             .catch(function(erro) {
