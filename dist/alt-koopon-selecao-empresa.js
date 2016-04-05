@@ -16,8 +16,8 @@
     .constant('ID_KOOPON_EMPRESA', '60f1fe1f835b14a3d20ac0f046fac668')
     .constant('ID_KOOPON_CONTADOR', '3c59dc048e8850243be8079a5c74d079')
     .constant('AltKooponEventoEmpresa', {
-      EVENTO_EMPRESA_ESCOLHIDA: 'empresa-escolhida',
-      EVENTO_EMPRESA_NAO_CONFIGURADA: 'empresa-nao-configurada'
+      EVENTO_EMPRESA_ESCOLHIDA: 'alt.koopon.empresa-escolhida',
+      EVENTO_EMPRESA_NAO_CONFIGURADA: 'alt.koopon.empresa-nao-configurada'
     })
     .factory('AltKooponEmpresaNaoSelecionadaInterceptor', ['$rootScope', '$q', '$location', 'AltKooponEventoEmpresa', function ($rootScope, $q, $location, AltKooponEventoEmpresa) {
       return {
@@ -25,9 +25,8 @@
           var _deveSelecionarEmpresa = (!!rej) && (rej.status === 403) && (!!rej.data) && (rej.data.deveSelecionarEmpresa);
           var _wizardUrl = !!~$location.path().indexOf('wizard');
 
-          $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
-
           if (_deveSelecionarEmpresa && !_wizardUrl) {
+            $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
             $location.path('/selecao-empresas');
           }
 

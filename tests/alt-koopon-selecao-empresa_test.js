@@ -3,7 +3,8 @@
 describe('alt.koopon.selecao-empresa', function() {
   var _rootScope, _scope, _http, _q, _httpBackend, _locationMock, _xtorage,
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
-      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper;
+      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper,
+      _EventoEmpresa;
 
   var ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR;
 
@@ -25,6 +26,8 @@ describe('alt.koopon.selecao-empresa', function() {
     ID_KOOPON_CONTADOR = $injector.get('ID_KOOPON_CONTADOR');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
+    _EventoEmpresa = $injector.get('AltKooponEventoEmpresa');
+
     _AltAlertaFlutuanteService = $injector.get('AltAlertaFlutuanteService');
     _AltKooponEmpresaService = $injector.get('AltKooponEmpresaService');
     _AltPassaporteProcuracaoService = $injector.get('AltPassaporteProcuracaoService');
@@ -34,6 +37,8 @@ describe('alt.koopon.selecao-empresa', function() {
 
     spyOn(_xtorage, 'save').and.callFake(angular.noop);
     spyOn(_xtorage, 'get').and.callFake(angular.noop);
+
+    spyOn(_rootScope, '$broadcast').and.callThrough();
   }));
 
   describe('constantes', function() {
@@ -57,6 +62,7 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush();
 
         expect(_locationMock.path).not.toHaveBeenCalled();
+        expect(_rootScope.$broadcast).not.toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 400 - não deve chamar troca de rota', function() {
@@ -69,6 +75,7 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush();
 
         expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
+        expect(_rootScope.$broadcast).not.toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 403 - não deve chamar troca de rota', function() {
@@ -81,6 +88,7 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush();
 
         expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
+        expect(_rootScope.$broadcast).not.toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 403 - deve e não chamar troca de rota, url contém wizard', function() {
@@ -93,6 +101,7 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush();
 
         expect(_locationMock.path).not.toHaveBeenCalledWith('/selecao-empresas');
+        expect(_rootScope.$broadcast).not.toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
 
       it('deve retornar uma promessa com a rejeição do servidor - 403 - deve chamar troca de rota', function() {
@@ -105,6 +114,7 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush();
 
         expect(_locationMock.path).toHaveBeenCalledWith('/selecao-empresas');
+        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
     });
   });
@@ -191,6 +201,7 @@ describe('alt.koopon.selecao-empresa', function() {
           expect(erro).toBeDefined();
           expect(erro instanceof TypeError).toBeDefined();
           expect(erro.message).toEqual('Empresa deve ser informada para ser passada ao servidor.');
+          expect(_rootScope.$broadcast).not.toHaveBeenCalled();
         })
       });
 
@@ -204,6 +215,7 @@ describe('alt.koopon.selecao-empresa', function() {
           expect(erro).toBeDefined();
           expect(erro instanceof TypeError).toBeDefined();
           expect(erro.message).toEqual('Empresa deve ser informada para ser passada ao servidor.');
+          expect(_rootScope.$broadcast).not.toHaveBeenCalled();
         })
       });
 
@@ -220,6 +232,7 @@ describe('alt.koopon.selecao-empresa', function() {
         });
 
         _httpBackend.flush();
+        expect(_rootScope.$broadcast).not.toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_NAO_CONFIGURADA);
       });
 
       it('deve chamar o endpoint corretamente', function() {
@@ -238,6 +251,7 @@ describe('alt.koopon.selecao-empresa', function() {
         .catch(function(){expect(true).toBe(false)});
 
         _httpBackend.flush();
+        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA);
       });
     });
   });
