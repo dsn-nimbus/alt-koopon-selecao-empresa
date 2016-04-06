@@ -261,32 +261,6 @@ describe('alt.koopon.selecao-empresa', function() {
         spyOn(_locationMock, 'path').and.returnValue('/');
     });
 
-    describe('escolheEmpresaComProcuracao', function() {
-      it('deve chamar o metodo com os parâmetros corretos', function() {
-        var _empresa = {id: 1};
-
-        spyOn(_AltPassaporteUsuarioLogadoManager, 'retorna').and.returnValue({
-          assinantes: [],
-          assinantesEmpresa: []
-        })
-
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({assinantes: []});
-        });
-
-        spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
-          return _q.when({assinantes: []});
-        });
-
-        _AltKooponSelecaoEmpresasHelper.escolheEmpresaComProcuracao(_empresa);
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa);
-        expect(_AltPassaporteProcuracaoService.getInfo).toHaveBeenCalledWith(_empresa.id, ID_KOOPON_CONTADOR, ID_KOOPON_EMPRESA);
-      });
-    });
-
     describe('escolheEmpresaSemProcuracao', function() {
       it('deve chamar o metodo com os parâmetros corretos', function() {
         var _empresa = {id: 1};
@@ -403,89 +377,6 @@ describe('alt.koopon.selecao-empresa', function() {
       }));
     });
 
-    describe('initComProcuracao', function() {
-      it('deve tentar buscar as empresas, mas o serviço retorna undefined', inject(function ($controller) {
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(undefined);
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.initComProcuracao();
-
-        expect(_scope.akseCtrl.empresas).toEqual([]);
-      }));
-
-      it('deve buscar as empresas corretamente, duas são preenchidas', inject(function ($controller) {
-        var _empresas = [{id: 1, nome: 'a'}, {id: 2, nome: 'b'}];
-
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.initComProcuracao();
-
-        expect(_scope.akseCtrl.empresas).toEqual(_empresas);
-        expect(_locationMock.path).not.toHaveBeenCalled();
-      }));
-
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.reject({mensagem: 'abc'});
-        });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.initComProcuracao();
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).not.toHaveBeenCalled();
-        expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalledWith({msg: 'abc'});
-      }));
-
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
-        });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.initComProcuracao();
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-      }));
-
-      it('deve buscar apenas uma empresa, buscando com a propriedade passada por parâmetro', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
-        });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.initComProcuracao('a');
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_AltKooponEmpresaService.getEmpresas).toHaveBeenCalledWith('a');
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-      }));
-    });
-
     describe('escolheEmpresa', function() {
       it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', inject(function($controller) {
         var _empresa = [{nome: 'a', id: 1}];
@@ -530,10 +421,10 @@ describe('alt.koopon.selecao-empresa', function() {
       }));
 
       it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
+        var _empresas = [{nome: 'a', id: 1}];
 
         spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
         spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
           return _q.when({ok: true});
         });
@@ -544,21 +435,19 @@ describe('alt.koopon.selecao-empresa', function() {
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        spyOn(_scope.akseCtrl, '_escolheEmpresaComProcuracao').and.callThrough();
-        spyOn(_scope.akseCtrl, '_escolheEmpresa').and.callThrough();
+        spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
 
         _rootScope.$digest();
 
-        _scope.akseCtrl.escolheEmpresa(_empresa[0], true);
+        _scope.akseCtrl.escolheEmpresa(_empresas[0]);
 
         _rootScope.$digest();
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
+        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresas[0]);
+        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresas[0]);
         expect(_locationMock.path).toHaveBeenCalledWith('/');
         expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-        expect(_scope.akseCtrl._escolheEmpresa).not.toHaveBeenCalled();
-        expect(_scope.akseCtrl._escolheEmpresaComProcuracao).toHaveBeenCalledWith(_empresa[0]);
+        expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalledWith(_empresas[0]);
       }));
 
       it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', inject(function($controller) {
@@ -572,8 +461,7 @@ describe('alt.koopon.selecao-empresa', function() {
 
         $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        spyOn(_scope.akseCtrl, '_escolheEmpresaComProcuracao').and.callThrough();
-        spyOn(_scope.akseCtrl, '_escolheEmpresa').and.callThrough();
+        spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
 
         _rootScope.$digest();
 
@@ -585,101 +473,8 @@ describe('alt.koopon.selecao-empresa', function() {
         expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
         expect(_locationMock.path).toHaveBeenCalledWith('/');
         expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-        expect(_scope.akseCtrl._escolheEmpresa).toHaveBeenCalled();
-        expect(_scope.akseCtrl._escolheEmpresaComProcuracao).not.toHaveBeenCalled();
+        expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalled();
       }));
-    });
-
-    describe('_escolheEmpresaComProcuracao', function() {
-      it('deve tentar escolher a empresa, mas service retorna erro', inject(function($controller) {
-        var _empresa = {
-          nome: 'abc'
-        };
-
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.reject({erro: 1});
-        });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl._escolheEmpresaComProcuracao(_empresa);
-
-        _rootScope.$digest();
-
-        expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalled();
-      }));
-
-      it('deve tentar buscar as informações de procuração, mas service retorna erro', inject(function($controller) {
-        var _empresa = {
-          nome: 'abc'
-        };
-
-        var _usuario = {
-          nome: 'xyz'
-        };
-
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when(null);
-        });
-
-        spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
-          return _q.reject({erro: 2});
-        });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl._escolheEmpresaComProcuracao(_empresa);
-
-        _rootScope.$digest();
-
-        expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalled();
-      }));
-
-      it('deve buscar as informações corretamente', inject(function($controller) {
-        var _empresa = {
-          nome: 'abc'
-        };
-
-        var _usuario = {
-          nome: 'xyz',
-          assinantes: [1, 2, 3]
-        };
-
-        var _usuarioStorage = {
-          nome: 'xyz',
-          idade: 99,
-          assinantes: []
-        };
-
-        var _usuarioMerged = {
-          nome: 'xyz',
-          idade: 99,
-          assinantes: [],
-          assinantesEmpresa: [1, 2, 3]
-        }
-
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when(null);
-        });
-
-        spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
-          return _q.when(_usuario);
-        });
-
-        spyOn(_AltPassaporteUsuarioLogadoManager, 'atualiza').and.callFake(angular.noop);
-        spyOn(_AltPassaporteUsuarioLogadoManager, 'retorna').and.returnValue(_usuarioStorage);
-        spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl._escolheEmpresaComProcuracao(_empresa);
-
-        _rootScope.$digest();
-
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-        expect(_AltPassaporteUsuarioLogadoManager.atualiza).toHaveBeenCalledWith(_usuarioMerged);
-        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa);
-      }))
     });
   });
 })
