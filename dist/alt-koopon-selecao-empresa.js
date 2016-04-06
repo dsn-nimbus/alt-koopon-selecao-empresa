@@ -12,7 +12,6 @@
     .config(['$httpProvider', function($httpProvider) {
       $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
     }])
-    .constant('_', _)
     .constant('ID_KOOPON_EMPRESA', '60f1fe1f835b14a3d20ac0f046fac668')
     .constant('ID_KOOPON_CONTADOR', '3c59dc048e8850243be8079a5c74d079')
     .constant('AltKooponEventoEmpresa', {
@@ -99,55 +98,23 @@
 
         return new AltKooponEmpresaService();
       }])
-    .service('AltKooponSelecaoEmpresasHelper', ['$location', 'AltKooponEmpresaService', 'AltPassaporteUsuarioLogadoManager', 'AltPassaporteProcuracaoService', '_', 'ID_KOOPON_EMPRESA', 'ID_KOOPON_CONTADOR', function($location, AltKooponEmpresaService, AltPassaporteUsuarioLogadoManager, AltPassaporteProcuracaoService, _, ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR) {
-      this.escolheEmpresaComProcuracao = function(empresa) {
-        return AltKooponEmpresaService
-          .escolhe(empresa)
-          .then(function() {
-            return AltPassaporteProcuracaoService
-              .getInfo(empresa.id, ID_KOOPON_CONTADOR, ID_KOOPON_EMPRESA)
-              .then(function(usuario) {
-                var _usuario = angular.copy(usuario);
-
-                _usuario.assinantesEmpresa = usuario.assinantes || [];
-                _usuario.assinantes.length = 0;
-
-                var _usuarioStorage = AltPassaporteUsuarioLogadoManager.retorna();
-
-                if (ng.isArray(_usuarioStorage.assinantes)) {
-                  _usuarioStorage.assinantes.length = 0;
-                }
-
-                if (ng.isArray(_usuarioStorage.assinantesEmpresa)) {
-                  _usuarioStorage.assinantesEmpresa.length = 0;
-                }
-
-                var _usuarioMerge = _.merge(_usuario, _usuarioStorage);
-
-                AltPassaporteUsuarioLogadoManager.atualiza(_usuarioMerge);
-                AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(empresa);
-
-                $location.path('/');
-              });
-          })
-      };
-
+    .service('AltKooponSelecaoEmpresasHelper', ['$location', 'AltKooponEmpresaService', function($location, AltKooponEmpresaService) {
       this.escolheEmpresaSemProcuracao = function(empresa) {
         return AltKooponEmpresaService
           .escolhe(empresa)
           .then(function() {
-            $location.path('/');
             AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(empresa);
+            $location.path('/');
           });
       };
     }])
-    .controller('AltKooponSelecaoEmpresasController', ['AltKooponSelecaoEmpresasHelper', 'AltKooponEmpresaService', 'AltAlertaFlutuanteService', 'AltCarregandoInfoService', '_',
-      function(AltKooponSelecaoEmpresasHelper, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, _) {
+    .controller('AltKooponSelecaoEmpresasController', ['AltKooponSelecaoEmpresasHelper', 'AltKooponEmpresaService', 'AltAlertaFlutuanteService', 'AltCarregandoInfoService',
+      function(AltKooponSelecaoEmpresasHelper, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService) {
         var self = this;
 
         self.empresas = [];
 
-        self._escolheEmpresa = function(empresa) {
+        self.escolheEmpresa = function(empresa) {
           AltCarregandoInfoService.exibe();
 
           AltKooponSelecaoEmpresasHelper
@@ -160,38 +127,12 @@
             });
         };
 
-        self._escolheEmpresaComProcuracao = function(empresa) {
-          AltCarregandoInfoService.exibe();
-
-          AltKooponSelecaoEmpresasHelper
-            .escolheEmpresaComProcuracao(empresa)
-            .catch(function(erro) {
-              AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
-            })
-            .finally(function() {
-              AltCarregandoInfoService.esconde();
-            });
-        };
-
-        self.escolheEmpresa = function(empresa, comProcuracao) {
-          if (comProcuracao) {
-            self._escolheEmpresaComProcuracao(empresa);
-          }
-          else {
-            self._escolheEmpresa(empresa);
-          }
-        };
-
-        self.init = function(emp, comProcuracao) {
+        self.init = function(emp) {
           self.empresas = AltKooponEmpresaService.getEmpresas(emp) || self.empresas;
 
           if (self.empresas.length === 1) {
-            self._escolheEmpresa(self.empresas[0], comProcuracao);
+            self.escolheEmpresa(self.empresas[0]);
           }
-        };
-
-        self.initComProcuracao = function(emp) {
-          self.init(emp, true);
         };
       }]);
 }(window.angular));
