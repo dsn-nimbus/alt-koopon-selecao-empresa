@@ -88,7 +88,7 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function(empresaEscolhida) {
-              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA);
+              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, empresa);
               return empresaEscolhida;
             })
             .catch(function(erro) {

@@ -251,7 +251,8 @@ describe('alt.koopon.selecao-empresa', function() {
         .catch(function(){expect(true).toBe(false)});
 
         _httpBackend.flush();
-        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA);
+
+        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, _empresa);
       });
     });
   });
