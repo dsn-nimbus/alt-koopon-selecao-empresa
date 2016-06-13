@@ -134,5 +134,17 @@
             self.escolheEmpresa(self.empresas[0]);
           }
         };
-      }]);
+      }])
+    .controller('AltEmpresaEscolhidaController', ['$rootScope', '$scope', 'AltKooponEmpresaService', function($rootScope, $scope, AltKooponEmpresaService) {
+        // Esta controller deve ser utilizada em cada rota, já que não ouve mudanças de rota
+        // e coisas do tipo;
+
+        var self = this;
+
+        self.empresaEscolhida = AltKooponEmpresaService.getEmpresaEscolhidaDaStorage();
+
+        $scope.$on('$destroy', function() {
+            self.empresaEscolhida = null;
+        });
+    }]);
 }(window.angular));

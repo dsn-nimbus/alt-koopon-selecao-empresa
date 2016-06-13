@@ -478,4 +478,42 @@ describe('alt.koopon.selecao-empresa', function() {
       }));
     });
   });
+
+  describe('AltEmpresaEscolhidaController', function() {
+    var NOME_CONTROLLER = 'AltEmpresaEscolhidaController as eCtrl';
+
+    describe('criação', function() {
+        it('deve ser criada corretamente', inject(function($controller) {
+           $controller(NOME_CONTROLLER, {$scope: _scope});
+        }));
+    })
+
+    describe('onLoad', function(){
+        it('deve buscar a empresa corretamente', inject(function($controller) {
+            var _daStorage = {a: 1};
+
+            spyOn(_AltKooponEmpresaService, 'getEmpresaEscolhidaDaStorage').and.returnValue(_daStorage);
+
+            $controller(NOME_CONTROLLER, {$scope: _scope});
+
+            expect(_scope.eCtrl.empresaEscolhida).toEqual(_daStorage);
+        }));
+    });
+
+    describe('$destroy', function() {
+       it('deve limpar a informação da empresaEscolhida', inject(function($controller) {
+           var _daStorage = {a: 1};
+
+           spyOn(_AltKooponEmpresaService, 'getEmpresaEscolhidaDaStorage').and.returnValue(_daStorage);
+
+           $controller(NOME_CONTROLLER, {$scope: _scope});
+
+           expect(_scope.eCtrl.empresaEscolhida).toEqual(_daStorage);
+
+           _rootScope.$broadcast('$destroy');
+
+           expect(_scope.eCtrl.empresaEscolhida).toBeNull();
+       }));
+    });
+  })
 })
