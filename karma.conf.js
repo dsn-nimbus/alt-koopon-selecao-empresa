@@ -21,6 +21,7 @@ module.exports = function(config) {
       'bower_components/alt-passaporte-usuario-logado/dist/alt-passaporte-usuario-logado.min.js',
       'bower_components/alt-passaporte-procuracao/dist/alt-passaporte-procuracao.min.js',
       'bower_components/alt-carregando-info/dist/alt-carregando-info.min.js',
+      'bower_components/alt-modal-service/dist/alt-modal-service.js',
       'bower_components/alt-passaporte-informacoes-autorizacao/dist/alt-passaporte-informacoes-autorizacao.min.js',
       'bower_components/ng-xtorage/ng-xtorage.min.js',
 

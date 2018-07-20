@@ -32,6 +32,7 @@ gulp.task('build', ['unit_test', 'build-css'], () => {
 });
 
 gulp.task('unit_test', (done) => {
+  console.log('oi');
   let _opts = {
     configFile: __dirname + '/karma.conf.js',
     singleRun: true,
