@@ -29,7 +29,8 @@
     "alt-alerta-flutuante": "~0.0.4",
     "alt-passaporte-usuario-logado": "~0.0.1",
     "alt-carregando-info": "~0.0.1",
-    "alt-passaporte-procuracao": "~0.0.2"
+    "alt-passaporte-procuracao": "~0.0.2",
+    "alt-modal-service": "^0.0.2"
   },
   "devDependencies": {
     "angular-mocks": "1.4.8"

@@ -3,10 +3,10 @@
 describe('alt.koopon.selecao-empresa', function() {
   var _rootScope, _scope, _http, _q, _httpBackend, _locationMock, _xtorage,
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
-      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper,
-      _EventoEmpresa;
+      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper, _AltModalService,
+      _EventoEmpresa, _assinanteKoopon, _assinanteKooponInadimplente, _assinanteKooponNaoPleno, _AltPassaportePublicoResource;
 
-  var ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR;
+  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
 
   beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
@@ -22,8 +22,8 @@ describe('alt.koopon.selecao-empresa', function() {
 
     _locationMock = $injector.get('$location');
 
-    ID_KOOPON_EMPRESA = $injector.get('ID_KOOPON_EMPRESA');
-    ID_KOOPON_CONTADOR = $injector.get('ID_KOOPON_CONTADOR');
+    ID_STATUS_BIMER_PLENO_ATENDIMENTO = $injector.get('ID_STATUS_BIMER_PLENO_ATENDIMENTO');
+    ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = $injector.get('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
     _EventoEmpresa = $injector.get('AltKooponEventoEmpresa');
@@ -32,6 +32,8 @@ describe('alt.koopon.selecao-empresa', function() {
     _AltKooponEmpresaService = $injector.get('AltKooponEmpresaService');
     _AltPassaporteProcuracaoService = $injector.get('AltPassaporteProcuracaoService');
     _AltKooponSelecaoEmpresasHelper = $injector.get('AltKooponSelecaoEmpresasHelper');
+    _AltPassaportePublicoResource = $injector.get('AltPassaportePublicoResource');
+    _AltModalService = $injector.get('AltModalService');
 
     spyOn(_AltAlertaFlutuanteService, 'exibe').and.callFake(angular.noop);
 
@@ -39,12 +41,37 @@ describe('alt.koopon.selecao-empresa', function() {
     spyOn(_xtorage, 'get').and.callFake(angular.noop);
 
     spyOn(_rootScope, '$broadcast').and.callThrough();
+
+    _assinanteKoopon = {
+      descricaoStatus: 'Pleno Atendimento',
+      codigoCrm: '438694',
+      idAssinante: 3111,
+      idStatusCrm: '0010000001',
+      idProdutoStatus: 18,
+      inadimplenteCrm: false
+    };
+    _assinanteKooponInadimplente = {
+      descricaoStatus: 'Pleno Atendimento',
+      codigoCrm: '438694',
+      idAssinante: 3111,
+      idStatusCrm: '0010000001',
+      idProdutoStatus: 18,
+      inadimplenteCrm: true
+    };
+    _assinanteKooponNaoPleno = {
+      descricaoStatus: 'Não Pleno Atendimento',
+      codigoCrm: '438694',
+      idAssinante: 3111,
+      idStatusCrm: '999',
+      idProdutoStatus: 18,
+      inadimplenteCrm: true
+    };
   }));
 
   describe('constantes', function() {
     it('deve ter os valores corretos para as constantes', function() {
-      expect(ID_KOOPON_EMPRESA).toEqual('60f1fe1f835b14a3d20ac0f046fac668');
-      expect(ID_KOOPON_CONTADOR).toEqual('3c59dc048e8850243be8079a5c74d079');
+      expect(ID_STATUS_BIMER_PLENO_ATENDIMENTO).toBe('0010000001');
+      expect(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO).toBe('#alt-koopon-selecao-empresa-modal-inadimplencia');
     });
   });
 
@@ -257,6 +284,87 @@ describe('alt.koopon.selecao-empresa', function() {
     });
   });
 
+  describe('AltKooponPermissaoAssinanteService', function() {
+    var _kooponPermissaoAssinanteService, _log;
+    beforeEach(inject(function($injector) {
+      _kooponPermissaoAssinanteService = $injector.get('AltKooponPermissaoAssinanteService');
+      _log = $injector.get('$log');
+    }));
+
+    describe('temPermissaoAcesso(idExternoEmpresa)', function() {
+      var _respostaTemAcesso;
+
+      describe('- passaporte retorna erro na consulta do assinante -', function() {
+        beforeEach(function(done) {
+          var idExterno = '12345';
+          
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res, rej) {
+              rej({erros: [{
+                mensagem: 'Houve um erro interno na aplicação. - javax.validation.ValidationException: Código de assinante [12345] fora do padrão, o código deve ter 6, 11 ou 13 caracteres.'
+              }]});
+            })
+          });
+
+          spyOn(_log, 'error');
+
+          _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno).then(function(resp) {
+            _respostaTemAcesso = resp;
+            done();
+          });
+        });
+        it('deve considerar empresa SEM permissao de acesso.', function() {
+          expect(_respostaTemAcesso).toBe(false);
+        });
+        it('deve logar informação de erro na consulta ao passaporte.', function() {
+          expect(_log.error).toHaveBeenCalledWith('Falha ao obter dados administrativos do assinante 12345 para o produto.');
+        });
+      });
+
+      describe('- passaporte retorna ok na consulta do assinante -', function() {
+        
+        describe('- assinante inadimplente CRM -', function() {
+          beforeEach(function(done) {
+            var idExterno = '12345';
+            
+            spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+              $promise: new Promise(function(res) {
+                res([_assinanteKooponInadimplente]);
+              })
+            });
+  
+            _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno).then(function(resp) {
+              _respostaTemAcesso = resp;
+              done();
+            });
+          });
+          it('deve considerar empresa SEM permissao de acesso.', function() {
+            expect(_respostaTemAcesso).toBe(false);
+          });
+        })
+        describe('- assinante não-pleno no status Bimer -', function() {
+          beforeEach(function(done) {
+            var idExterno = '12345';
+            
+            spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+              $promise: new Promise(function(res) {
+                res([_assinanteKooponNaoPleno]);
+              })
+            });
+  
+            _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno).then(function(resp) {
+              _respostaTemAcesso = resp;
+              done();
+            });
+          });
+          it('deve considerar empresa SEM permissao de acesso.', function() {
+            expect(_respostaTemAcesso).toBe(false);
+          });
+        })
+      });
+    });
+  });
+
   describe('controller helper', function() {
     beforeEach(function() {
         spyOn(_locationMock, 'path').and.returnValue('/');
@@ -322,160 +430,284 @@ describe('alt.koopon.selecao-empresa', function() {
         expect(_locationMock.path).not.toHaveBeenCalled();
       }));
 
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.reject({mensagem: 'abc'});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', function(done) { 
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1, idExterno: '438694'}];
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res, rej) {
+              rej({mensagem: 'abc'});
+            });
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
+
+          $controller(NOME_CONTROLLER, {$scope: _scope});
+
+          _scope.akseCtrl.init();
+
+          _scope.$digest();
+
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_locationMock.path).not.toHaveBeenCalled();
+            expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalledWith({msg: 'abc'});
+            done();
+          })
         });
+      });
 
-        $controller(NOME_CONTROLLER, {$scope: _scope});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok', function(done) {
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1, idExterno: '438694'}];
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res) {
+              res({ok: true});
+            });
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
 
-        _scope.akseCtrl.init();
+          $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        _rootScope.$digest();
+          _scope.akseCtrl.init();
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).not.toHaveBeenCalled();
-        expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalledWith({msg: 'abc'});
-      }));
+          _scope.$digest();
 
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_locationMock.path).toHaveBeenCalledWith('/');
+            expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+            done();
+          });
         });
+      });
 
-        $controller(NOME_CONTROLLER, {$scope: _scope});
+      it('deve buscar apenas uma empresa, buscando com a propriedade passada por parâmetro', function(done) {
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1, idExterno: _assinanteKoopon.idExterno}];
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res) {
+              res({ok: true});
+            })
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
 
-        _scope.akseCtrl.init();
+          $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        _rootScope.$digest();
+          _scope.akseCtrl.init('a');
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-      }));
+          _rootScope.$digest();
 
-      it('deve buscar apenas uma empresa, buscando com a propriedade passada por parâmetro', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_AltKooponEmpresaService.getEmpresas).toHaveBeenCalledWith('a');
+            expect(_locationMock.path).toHaveBeenCalledWith('/');
+            expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+            done();
+          });
         });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        _scope.akseCtrl.init('a');
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_AltKooponEmpresaService.getEmpresas).toHaveBeenCalledWith('a');
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-      }));
+      });
     });
 
     describe('escolheEmpresa', function() {
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.reject({mensagem: 'abc'});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', function(done) {
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1}];
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res, rej) {
+              rej({mensagem: 'abc'});
+            });
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
+
+          $controller(NOME_CONTROLLER, {$scope: _scope});
+
+          _rootScope.$digest();
+
+          _scope.akseCtrl.escolheEmpresa(_empresa[0]);
+
+          _rootScope.$digest();
+
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_locationMock.path).not.toHaveBeenCalled();
+            expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalledWith({msg: 'abc'});
+            done();
+          });
         });
+      });
 
-        $controller(NOME_CONTROLLER, {$scope: _scope});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok', function(done) { 
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1}];
+          spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res) {res({ok: true})});
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
 
-        _rootScope.$digest();
+          $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        _scope.akseCtrl.escolheEmpresa(_empresa[0]);
+          _scope.akseCtrl.escolheEmpresa(_empresa[0]);
 
-        _rootScope.$digest();
+          _scope.$digest();
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).not.toHaveBeenCalled();
-        expect(_AltAlertaFlutuanteService.exibe).toHaveBeenCalledWith({msg: 'abc'});
-      }));
-
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
+            expect(_locationMock.path).toHaveBeenCalledWith('/');
+            expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+            done();
+          });
         });
+      });
 
-        $controller(NOME_CONTROLLER, {$scope: _scope});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', function(done) { 
+        inject(function($controller) {
+          var _empresas = [{nome: 'a', id: 1}];
 
-        _rootScope.$digest();
+          spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res) {res({ok: true})});
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
 
-        _scope.akseCtrl.escolheEmpresa(_empresa[0]);
+          spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
+            return _q.when({assinantes: []});
+          });
 
-        _rootScope.$digest();
+          $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-      }));
+          spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
 
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', inject(function($controller) {
-        var _empresas = [{nome: 'a', id: 1}];
+          _rootScope.$digest();
 
-        spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
+          _scope.akseCtrl.escolheEmpresa(_empresas[0]);
+
+          _rootScope.$digest();
+
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresas[0]);
+            expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresas[0]);
+            expect(_locationMock.path).toHaveBeenCalledWith('/');
+            expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+            expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalledWith(_empresas[0]);
+            done();
+          });
         });
+      });
 
-        spyOn(_AltPassaporteProcuracaoService, 'getInfo').and.callFake(function() {
-          return _q.when({assinantes: []});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', function(done) {
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1}];
+          spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+
+          spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
+            return new Promise(function(res) {res({ok:true})});
+          });
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKoopon
+              ]);
+            })
+          });
+
+          $controller(NOME_CONTROLLER, {$scope: _scope});
+
+          spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
+
+          _rootScope.$digest();
+
+          _scope.akseCtrl.escolheEmpresa(_empresa[0]);
+
+          _rootScope.$digest();
+
+          setTimeout(function() {
+            expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
+            expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
+            expect(_locationMock.path).toHaveBeenCalledWith('/');
+            expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
+            expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalled();
+            done();
+          });
         });
+      });
 
-        $controller(NOME_CONTROLLER, {$scope: _scope});
+      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - sem permissao acesso', function(done) {
+        inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1}];
+          spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
 
-        spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
+          spyOn(_AltPassaportePublicoResource, 'query').and.returnValue({
+            $promise: new Promise(function(res) {
+              res([
+                _assinanteKooponInadimplente
+              ]);
+            })
+          });
+          spyOn(_AltModalService, 'open').and.callFake(angular.noop);
 
-        _rootScope.$digest();
+          $controller(NOME_CONTROLLER, {$scope: _scope});
 
-        _scope.akseCtrl.escolheEmpresa(_empresas[0]);
+          spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
 
-        _rootScope.$digest();
+          _rootScope.$digest();
 
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresas[0]);
-        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresas[0]);
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-        expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalledWith(_empresas[0]);
-      }));
+          _scope.akseCtrl.escolheEmpresa(_empresa[0]);
 
-      it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - com procuracao', inject(function($controller) {
-        var _empresa = [{nome: 'a', id: 1}];
-        spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-        spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          _rootScope.$digest();
 
-        spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
-          return _q.when({ok: true});
+          setTimeout(function() {
+            expect(_AltModalService.open).toHaveBeenCalledWith(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
+              backdrop: 'static'
+            });
+            done();
+          });
         });
-
-        $controller(NOME_CONTROLLER, {$scope: _scope});
-
-        spyOn(_scope.akseCtrl, 'escolheEmpresa').and.callThrough();
-
-        _rootScope.$digest();
-
-        _scope.akseCtrl.escolheEmpresa(_empresa[0]);
-
-        _rootScope.$digest();
-
-        expect(_AltKooponEmpresaService.escolhe).toHaveBeenCalledWith(_empresa[0]);
-        expect(_AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida).toHaveBeenCalledWith(_empresa[0]);
-        expect(_locationMock.path).toHaveBeenCalledWith('/');
-        expect(_AltAlertaFlutuanteService.exibe).not.toHaveBeenCalled();
-        expect(_scope.akseCtrl.escolheEmpresa).toHaveBeenCalled();
-      }));
+      });
     });
   });
 
