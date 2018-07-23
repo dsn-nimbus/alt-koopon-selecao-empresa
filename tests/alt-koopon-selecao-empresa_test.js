@@ -6,7 +6,7 @@ describe('alt.koopon.selecao-empresa', function() {
       _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper, _AltModalService,
       _EventoEmpresa, _assinanteKoopon, _assinanteKooponInadimplente, _assinanteKooponNaoPleno, _AltPassaportePublicoResource;
 
-  var ID_KOOPON_EMPRESA, ID_KOOPON_CONTADOR;
+  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
 
   beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
@@ -22,8 +22,8 @@ describe('alt.koopon.selecao-empresa', function() {
 
     _locationMock = $injector.get('$location');
 
-    ID_KOOPON_EMPRESA = $injector.get('ID_KOOPON_EMPRESA');
-    ID_KOOPON_CONTADOR = $injector.get('ID_KOOPON_CONTADOR');
+    ID_STATUS_BIMER_PLENO_ATENDIMENTO = $injector.get('ID_STATUS_BIMER_PLENO_ATENDIMENTO');
+    ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = $injector.get('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
     _EventoEmpresa = $injector.get('AltKooponEventoEmpresa');
@@ -70,8 +70,8 @@ describe('alt.koopon.selecao-empresa', function() {
 
   describe('constantes', function() {
     it('deve ter os valores corretos para as constantes', function() {
-      expect(ID_KOOPON_EMPRESA).toEqual('60f1fe1f835b14a3d20ac0f046fac668');
-      expect(ID_KOOPON_CONTADOR).toEqual('3c59dc048e8850243be8079a5c74d079');
+      expect(ID_STATUS_BIMER_PLENO_ATENDIMENTO).toBe('0010000001');
+      expect(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO).toBe('#alt-koopon-selecao-empresa-modal-inadimplencia');
     });
   });
 
@@ -689,8 +689,6 @@ describe('alt.koopon.selecao-empresa', function() {
             })
           });
           spyOn(_AltModalService, 'open').and.callFake(angular.noop);
-
-          var ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = '#koopon-core-modal-empresa-pendencias-administrativas';
 
           $controller(NOME_CONTROLLER, {$scope: _scope});
 

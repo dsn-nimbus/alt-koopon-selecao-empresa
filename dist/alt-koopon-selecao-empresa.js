@@ -13,17 +13,26 @@
     .config(['$httpProvider', function($httpProvider) {
       $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
     }])
-    .constant('ID_KOOPON_EMPRESA', '60f1fe1f835b14a3d20ac0f046fac668')
-    .constant('ID_KOOPON_CONTADOR', '3c59dc048e8850243be8079a5c74d079')
-    .constant('PASSAPORTE_PUBLICO_BASE_URI', 'https://passaporte2.alterdata.com.br/passaporte-rest-api/rest/publico/')
-    .constant('PASSAPORTE_PUBLICO_BASE_URI_DEV', 'https://passaporte2-dev.alterdata.com.br/passaporte-rest-api/rest/publico/')
-    .constant('PASSAPORTE_PUBLICO_BASE_URI_HML', 'https://passaporte2-hml.alterdata.com.br/passaporte-rest-api/rest/publico/')
-    .constant('CHAVE_PRODUTO_KOOPON', '690bbae547bc55fbe4d2aaea8f9b733a')
     .constant('ID_STATUS_BIMER_PLENO_ATENDIMENTO', '0010000001')
+    .constant('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO', '#alt-koopon-selecao-empresa-modal-inadimplencia')
     .constant('AltKooponEventoEmpresa', {
       EVENTO_EMPRESA_ESCOLHIDA: 'alt.koopon.empresa-escolhida',
       EVENTO_EMPRESA_NAO_CONFIGURADA: 'alt.koopon.empresa-nao-configurada'
     })
+    .provider('AltKooponSelecaoEmpresaPassaporteUrlBase', [function() {
+      this.url = '';
+
+      this.$get = [function() {
+        return this.url;
+      }];
+    }])
+    .provider('AltKooponSelecaoEmpresaChaveProduto', [function() {
+      this.chave = '';
+
+      this.$get = [function() {
+        return this.chave;
+      }];
+    }])
     .factory('AltKooponEmpresaNaoSelecionadaInterceptor', ['$rootScope', '$q', '$location', 'AltKooponEventoEmpresa', function ($rootScope, $q, $location, AltKooponEventoEmpresa) {
       return {
         responseError: function(rej) {
@@ -59,17 +68,11 @@
       return $resource(_url, _params, _methods);
     }])
     .factory('AltPassaportePublicoResource', [
-      '$resource', 
-      '$location',
-      'PASSAPORTE_PUBLICO_BASE_URI',
-      'PASSAPORTE_PUBLICO_BASE_URI_DEV',
-      'PASSAPORTE_PUBLICO_BASE_URI_HML',
-      function($resource, $location, PASSAPORTE_URI, PASSAPORTE_URI_DEV, PASSAPORTE_URI_HML) {
-        var dev = /.+(-dev).+/.test($location.host());
-        var hml = /.+(-hml).+/.test($location.host());
-        var passaporteBaseUrl = dev ? PASSAPORTE_URI_DEV : (hml ? PASSAPORTE_URI_HML : PASSAPORTE_URI);
-
-        var _url = passaporteBaseUrl + 'assinantes/:idExterno/produtos/:chaveProduto';
+      '$resource',
+      'AltKooponSelecaoEmpresaPassaporteUrlBase',
+      'AltKooponSelecaoEmpresaChaveProduto',
+      function($resource, passaporteBaseUrl, chaveProduto) {
+        var _url = passaporteBaseUrl + 'assinantes/:idExterno/produtos/' + chaveProduto;
         var _params = {};
         var _methods = {
           dadosAssinanteProduto: {
@@ -85,14 +88,12 @@
       '$location',
       '$log',
       'AltPassaportePublicoResource',
-      'CHAVE_PRODUTO_KOOPON',
       'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
-      function($http, $location, $log, passaportePublicoResource, CHAVE_PRODUTO_KOOPON, ID_STATUS_PLENO) {
+      function($http, $location, $log, passaportePublicoResource, ID_STATUS_PLENO) {
 
       var _buscaInformacoesAdministrativasAssinanteKoopon = function(idExternoEmpresa) {
         return passaportePublicoResource.query({
-          idExterno: idExternoEmpresa,
-          chaveProduto: CHAVE_PRODUTO_KOOPON
+          idExterno: idExternoEmpresa
         })
         .$promise
         .then(function(resp) {
@@ -175,14 +176,15 @@
       };
     }])
     .controller('AltKooponSelecaoEmpresasController', [
-        'AltKooponSelecaoEmpresasHelper',
-        'AltKooponPermissaoAssinanteService',
-        'AltKooponEmpresaService',
-        'AltAlertaFlutuanteService',
-        'AltCarregandoInfoService',
-        'AltModalService',
-      function(AltKooponSelecaoEmpresasHelper, AltKooponPermissaoAssinanteService, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService) {        var self = this;
-        var ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = '#koopon-core-modal-empresa-pendencias-administrativas';
+      'AltKooponSelecaoEmpresasHelper',
+      'AltKooponPermissaoAssinanteService',
+      'AltKooponEmpresaService',
+      'AltAlertaFlutuanteService',
+      'AltCarregandoInfoService',
+      'AltModalService',
+      'ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO',
+      function(AltKooponSelecaoEmpresasHelper, AltKooponPermissaoAssinanteService, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
+        var self = this;
 
         self.empresas = [];
 
