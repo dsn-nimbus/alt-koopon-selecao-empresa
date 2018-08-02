@@ -67,66 +67,29 @@
 
       return $resource(_url, _params, _methods);
     }])
-    .factory('AltPassaportePublicoResource', [
-      '$resource',
+    .service('AltKooponBuscaAssinantePassaporteService', [
+      '$http',
       'AltKooponSelecaoEmpresaPassaporteUrlBase',
       'AltKooponSelecaoEmpresaChaveProduto',
-      function($resource, passaporteBaseUrl, chaveProduto) {
-        var _url = passaporteBaseUrl + 'assinantes/:idExterno/produtos/' + chaveProduto;
-        var _params = {};
-        var _methods = {
-          dadosAssinanteProduto: {
-            method: "GET"
-          }
-        };
-
-        return $resource(_url, _params, _methods);
-      }
-    ])
-    .factory('AltKooponPermissaoAssinanteService', [
-      '$http',
-      '$location',
-      '$log',
-      'AltPassaportePublicoResource',
       'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
-      function($http, $location, $log, passaportePublicoResource, ID_STATUS_PLENO) {
+      function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO) {
+        this.temPermissaoAcesso = function(idExternoEmpresa) {
+          return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'assinantes/' + idExternoEmpresa + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
+          .then(function(info) {
+            if (!info || !info.data) {
+              return false;
+            }
 
-      var _buscaInformacoesAdministrativasAssinanteKoopon = function(idExternoEmpresa) {
-        return passaportePublicoResource.query({
-          idExterno: idExternoEmpresa
-        })
-        .$promise
-        .then(function(resp) {
-          return resp[0];
-        })
-        .catch(function() {
-          $log.error('Falha ao obter dados administrativos do assinante ' + idExternoEmpresa + ' para o produto.');
-          return null;
-        });
-      };
-
-      var _temPermissaoAcesso = function(idExternoEmpresa) {
-        return _buscaInformacoesAdministrativasAssinanteKoopon(idExternoEmpresa)
-        .then(function(dadosAssinante) {
-          if (!dadosAssinante) {
-            return false;
-          }
-          return dadosAssinante.idStatusCrm == ID_STATUS_PLENO && !dadosAssinante.inadimplenteCrm;
-        });
-      };
-
-      return {
-        temPermissaoAcesso: _temPermissaoAcesso
-      };
+            return info.data.idStatusCrm == ID_STATUS_PLENO && !info.data.inadimplenteCrm;
+          })
+        };
     }])
-    .factory('AltKooponEmpresaService', ['$rootScope','$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa',
-      function($rootScope, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa) {
+    .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaChaveProduto',
+      function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto) {
 
         var CHAVE_STORAGE_EMPRESA_ESCOLHIDA = 'emp_escolhida';
 
-        var AltKooponEmpresaService = function() {
-
-        };
+        var AltKooponEmpresaService = function() {};
 
         AltKooponEmpresaService.prototype.getEmpresas = function(nomeProp) {
           var _nomeProp = nomeProp || 'assinantes';
@@ -154,12 +117,12 @@
           return AltKooponEmpresaResource
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
-            .then(function(empresaEscolhida) {
-              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, empresa);
-              return empresaEscolhida;
-            })
-            .catch(function(erro) {
-              return $q.reject(erro);
+            .then(function() {
+              return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
+              .then(function(info) {
+                $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, info.data);
+                return info.data;
+              });
             });
         };
 
@@ -169,21 +132,21 @@
       this.escolheEmpresaSemProcuracao = function(empresa) {
         return AltKooponEmpresaService
           .escolhe(empresa)
-          .then(function() {
-            AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(empresa);
+          .then(function(empVindaDoPassaporte) {
+            AltKooponEmpresaService.salvaNaStorageEmpresaEscolhida(empVindaDoPassaporte);
             $location.path('/');
           });
       };
     }])
     .controller('AltKooponSelecaoEmpresasController', [
       'AltKooponSelecaoEmpresasHelper',
-      'AltKooponPermissaoAssinanteService',
+      'AltKooponBuscaAssinantePassaporteService',
       'AltKooponEmpresaService',
       'AltAlertaFlutuanteService',
       'AltCarregandoInfoService',
       'AltModalService',
       'ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO',
-      function(AltKooponSelecaoEmpresasHelper, AltKooponPermissaoAssinanteService, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
+      function(AltKooponSelecaoEmpresasHelper, AltKooponBuscaAssinantePassaporteService, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
         var self = this;
 
         self.empresas = [];
@@ -191,9 +154,8 @@
         self.escolheEmpresa = function(empresa) {
           AltCarregandoInfoService.exibe();
 
-          AltKooponPermissaoAssinanteService.temPermissaoAcesso(empresa.idExterno)
+          AltKooponBuscaAssinantePassaporteService.temPermissaoAcesso(empresa.idExterno)
           .then(function(temPermissao) {
-
             if (temPermissao) {
               return AltKooponSelecaoEmpresasHelper
                 .escolheEmpresaSemProcuracao(empresa)
@@ -203,8 +165,7 @@
                 .finally(function() {
                   AltCarregandoInfoService.esconde();
                 });
-            }
-            else {
+            } else {
               AltCarregandoInfoService.esconde();
               AltModalService.open(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
                 backdrop: 'static'
@@ -222,7 +183,7 @@
         };
       }])
     .controller('AltEmpresaEscolhidaController', ['$rootScope', '$scope', 'AltKooponEmpresaService', function($rootScope, $scope, AltKooponEmpresaService) {
-        // Esta controller deve ser utilizada em cada rota, já que não ouve mudanças de rota
+        // Esta controller deve ser utilizada em cada rota, já que não houve mudanças de rota
         // e coisas do tipo;
 
         var self = this;
