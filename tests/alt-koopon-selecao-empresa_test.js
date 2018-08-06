@@ -10,12 +10,12 @@ describe('alt.koopon.selecao-empresa', function() {
   var CHAVE_PRODUTO = 'abc123';
   var PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO = 'publico/assinantes/1/produtos/abc123'
   var TOKEN_PASSAPORTE = 'xxxxxxxxxxxxxxxx123xxxxxxxxxxxxxxxxxx'
+  var URL_TOKEN_USUARIO = URL_PASSAPORTE + 'authorization/token'
 
-  beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaPassaporteTokenProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
+  beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
     AltKooponSelecaoEmpresaPassaporteUrlBaseProvider.url = URL_PASSAPORTE;
     AltKooponSelecaoEmpresaChaveProdutoProvider.chave = CHAVE_PRODUTO;
-	AltKooponSelecaoEmpresaPassaporteTokenProvider.token = TOKEN_PASSAPORTE;
   }));
 
   beforeEach(inject(function($injector) {
@@ -284,7 +284,8 @@ describe('alt.koopon.selecao-empresa', function() {
 		var URL_ASSINANTE_PASSAPORTE = URL_PASSAPORTE + 'authorization/assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO
 
         _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200);
-        _httpBackend.expectGET(URL_ASSINANTE_PASSAPORTE + '?token=' + TOKEN_PASSAPORTE).respond(200, _usuarioComEmpresaCompletaVindaDoPassaporte);
+		_httpBackend.expectGET(URL_TOKEN_USUARIO).respond(200, {token: TOKEN_PASSAPORTE});
+        _httpBackend.expectGET(URL_ASSINANTE_PASSAPORTE + '?token=' + TOKEN_PASSAPORTE).respond(200, _usuarioComEmpresaCompletaVindaDoPassaporte);		
 
         _AltKooponEmpresaService
         .escolhe(_empresa)

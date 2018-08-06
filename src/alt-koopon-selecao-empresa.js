@@ -26,13 +26,6 @@
         return this.url;
       }];
     }])
-	.provider('AltKooponSelecaoEmpresaPassaporteToken', [function() {
-      this.token = '';
-
-      this.$get = [function() {
-        return this.token;
-      }];
-    }])
     .provider('AltKooponSelecaoEmpresaChaveProduto', [function() {
       this.chave = '';
 
@@ -91,8 +84,8 @@
           })
         };
     }])
-    .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaPassaporteToken', 'AltKooponSelecaoEmpresaChaveProduto',
-      function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaPassaporteToken, AltKooponSelecaoEmpresaChaveProduto) {
+    .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaChaveProduto',
+      function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto) {
 
         var CHAVE_STORAGE_EMPRESA_ESCOLHIDA = 'emp_escolhida';
 
@@ -125,13 +118,17 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function() {
+			  const URL_TOKEN_USUARIO = AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/token';
 			  const URL_ASSINANTE_PASSAPORTE = AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto;
-			  			  
-              return $http.get(URL_ASSINANTE_PASSAPORTE + '?token=' + AltKooponSelecaoEmpresaPassaporteToken)
-              .then(function(info) {
-                $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, info.data.assinantes[0]);
-                return info.data.assinantes[0];
-              });
+			  
+			  return $http.get(URL_TOKEN_USUARIO)
+				.then(function(infoToken) {
+					return $http.get(URL_ASSINANTE_PASSAPORTE + '?token=' + infoToken.data.token)
+					  .then(function(infoUsuario) {
+						$rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, infoUsuario.data.assinantes[0]);
+						return infoUsuario.data.assinantes[0];
+					  });
+				});
             });
         };
 
