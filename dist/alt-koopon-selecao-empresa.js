@@ -26,6 +26,13 @@
         return this.url;
       }];
     }])
+	.provider('AltKooponSelecaoEmpresaPassaporteToken', [function() {
+      this.token = '';
+
+      this.$get = [function() {
+        return this.token;
+      }];
+    }])
     .provider('AltKooponSelecaoEmpresaChaveProduto', [function() {
       this.chave = '';
 
@@ -70,7 +77,7 @@
     .service('AltKooponBuscaAssinantePassaporteService', [
       '$http',
       'AltKooponSelecaoEmpresaPassaporteUrlBase',
-      'AltKooponSelecaoEmpresaChaveProduto',
+	  'AltKooponSelecaoEmpresaChaveProduto',
       'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
       function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO) {
         this.temPermissaoAcesso = function(idExternoEmpresa) {
@@ -84,8 +91,8 @@
           })
         };
     }])
-    .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaChaveProduto',
-      function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto) {
+    .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaPassaporteToken', 'AltKooponSelecaoEmpresaChaveProduto',
+      function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaPassaporteToken, AltKooponSelecaoEmpresaChaveProduto) {
 
         var CHAVE_STORAGE_EMPRESA_ESCOLHIDA = 'emp_escolhida';
 
@@ -118,10 +125,12 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function() {
-              return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
+			  const URL_ASSINANTE_PASSAPORTE = AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto;
+			  			  
+              return $http.get(URL_ASSINANTE_PASSAPORTE + '?token=' + AltKooponSelecaoEmpresaPassaporteToken)
               .then(function(info) {
-                $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, info.data);
-                return info.data;
+                $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, info.data.assinantes[0]);
+                return info.data.assinantes[0];
               });
             });
         };

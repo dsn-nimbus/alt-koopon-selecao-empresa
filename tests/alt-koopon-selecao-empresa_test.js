@@ -9,11 +9,13 @@ describe('alt.koopon.selecao-empresa', function() {
   var URL_PASSAPORTE = 'https://passaporte2.alterdata.com.br/minha-api/';
   var CHAVE_PRODUTO = 'abc123';
   var PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO = 'publico/assinantes/1/produtos/abc123'
+  var TOKEN_PASSAPORTE = 'xxxxxxxxxxxxxxxx123xxxxxxxxxxxxxxxxxx'
 
-  beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
+  beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaPassaporteTokenProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
     AltKooponSelecaoEmpresaPassaporteUrlBaseProvider.url = URL_PASSAPORTE;
     AltKooponSelecaoEmpresaChaveProdutoProvider.chave = CHAVE_PRODUTO;
+	AltKooponSelecaoEmpresaPassaporteTokenProvider.token = TOKEN_PASSAPORTE;
   }));
 
   beforeEach(inject(function($injector) {
@@ -268,24 +270,35 @@ describe('alt.koopon.selecao-empresa', function() {
 
       it('deve chamar o endpoint corretamente e o passaporte deve retornar a empresa por id e chaveProduto', function() {
         var _empresa = {id: 1, qqcoisa: true};
-        var _empresaCompletaVindaDoPassaporte = {id: 1, qqcoisa: true, outraCoisa: false, produtos: [{a: 1}, {a: 2}, {a: 3}]};
+        var _usuarioComEmpresaCompletaVindaDoPassaporte = {
+			nomUsuario: 'xxx', 
+			assinantes: [
+				{
+					id: 1, 
+					qqcoisa: true, 
+					outraCoisa: false, 
+					produtos: [{a: 1}, {a: 2}, {a: 3}]
+				}
+			]
+		};
+		var URL_ASSINANTE_PASSAPORTE = URL_PASSAPORTE + 'authorization/assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO
 
         _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200);
-        _httpBackend.expectGET(URL_PASSAPORTE + 'authorization/assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO).respond(200, _empresaCompletaVindaDoPassaporte);
+        _httpBackend.expectGET(URL_ASSINANTE_PASSAPORTE + '?token=' + TOKEN_PASSAPORTE).respond(200, _usuarioComEmpresaCompletaVindaDoPassaporte);
 
         _AltKooponEmpresaService
         .escolhe(_empresa)
         .then(function(emp) {
-          expect(emp.id).toBe(_empresaCompletaVindaDoPassaporte.id);
-          expect(emp.qqcoisa).toBe(_empresaCompletaVindaDoPassaporte.qqcoisa);
-          expect(emp.outraCoisa).toBe(_empresaCompletaVindaDoPassaporte.outraCoisa);
-          expect(emp.produtos.length).toEqual(_empresaCompletaVindaDoPassaporte.produtos.length);
+          expect(emp.id).toBe(_usuarioComEmpresaCompletaVindaDoPassaporte.assinantes[0].id);
+          expect(emp.qqcoisa).toBe(_usuarioComEmpresaCompletaVindaDoPassaporte.assinantes[0].qqcoisa);
+          expect(emp.outraCoisa).toBe(_usuarioComEmpresaCompletaVindaDoPassaporte.assinantes[0].outraCoisa);
+          expect(emp.produtos.length).toEqual(_usuarioComEmpresaCompletaVindaDoPassaporte.assinantes[0].produtos.length);
         })
         .catch(function(){expect(true).toBe(false)});
 
         _httpBackend.flush();
 
-        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, _empresaCompletaVindaDoPassaporte);
+        expect(_rootScope.$broadcast).toHaveBeenCalledWith(_EventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, _usuarioComEmpresaCompletaVindaDoPassaporte.assinantes[0]);
       });
     });
   });
