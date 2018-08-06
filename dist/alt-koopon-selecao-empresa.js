@@ -74,13 +74,13 @@
       'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
       function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO) {
         this.temPermissaoAcesso = function(idExternoEmpresa) {
-          return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'assinantes/' + idExternoEmpresa + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
+          return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'publico/assinantes/' + idExternoEmpresa + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
           .then(function(info) {
-            if (!info || !info.data) {
+            if (!info || !info.data || !info.data.length) {
               return false;
             }
 
-            return info.data.idStatusCrm == ID_STATUS_PLENO && !info.data.inadimplenteCrm;
+            return info.data[0].idStatusCrm == ID_STATUS_PLENO && !info.data[0].inadimplenteCrm;
           })
         };
     }])
@@ -118,7 +118,7 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function() {
-              return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
+              return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
               .then(function(info) {
                 $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, info.data);
                 return info.data;

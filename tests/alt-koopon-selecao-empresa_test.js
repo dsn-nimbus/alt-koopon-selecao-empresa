@@ -8,7 +8,7 @@ describe('alt.koopon.selecao-empresa', function() {
   var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
   var URL_PASSAPORTE = 'https://passaporte2.alterdata.com.br/minha-api/';
   var CHAVE_PRODUTO = 'abc123';
-  var URL_CHAMADA_PASSAPORTE_ASSINANTE_ESPECIFICO = 'https://passaporte2.alterdata.com.br/minha-api/assinantes/1/produtos/abc123'
+  var PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO = 'publico/assinantes/1/produtos/abc123'
 
   beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
@@ -271,7 +271,7 @@ describe('alt.koopon.selecao-empresa', function() {
         var _empresaCompletaVindaDoPassaporte = {id: 1, qqcoisa: true, outraCoisa: false, produtos: [{a: 1}, {a: 2}, {a: 3}]};
 
         _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200);
-        _httpBackend.expectGET(URL_PASSAPORTE + 'assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO).respond(200, _empresaCompletaVindaDoPassaporte);
+        _httpBackend.expectGET(URL_PASSAPORTE + 'authorization/assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO).respond(200, _empresaCompletaVindaDoPassaporte);
 
         _AltKooponEmpresaService
         .escolhe(_empresa)
@@ -294,7 +294,7 @@ describe('alt.koopon.selecao-empresa', function() {
     describe('temPermissaoAcesso', function() {
       it('deve retornar false - passaporte retorna erro', function() {
         var idExterno = '1';
-        _httpBackend.expectGET(URL_CHAMADA_PASSAPORTE_ASSINANTE_ESPECIFICO).respond(400)
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(400)
 
         _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
           .then(function() {
@@ -310,7 +310,7 @@ describe('alt.koopon.selecao-empresa', function() {
       it('deve retornar ok na consulta de assinante, mas assinante não tem acesso', function() {
         var idExterno = '1';
 
-        _httpBackend.expectGET(URL_CHAMADA_PASSAPORTE_ASSINANTE_ESPECIFICO).respond(200, {nome: 'a', id: 1, idStatusCrm: 'xxx', produtos: [{nome: 'x'}]})
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [{nome: 'a', id: 1, idStatusCrm: 'xxx', produtos: [{nome: 'x'}]}])
 
         _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
           .then(function(info) {
@@ -326,11 +326,11 @@ describe('alt.koopon.selecao-empresa', function() {
       it('deve retornar ok na consulta de assinante, e assinante tem acesso ao produto', function() {
         var idExterno = '1';
 
-        _httpBackend.expectGET(URL_CHAMADA_PASSAPORTE_ASSINANTE_ESPECIFICO).respond(200, {nome: 'a', id: 1, idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO, produtos: [{nome: 'x'}]})
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [{nome: 'a', id: 1, idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO, produtos: [{nome: 'x'}]}])
 
         _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(info) {
-            expect(info).toBe(true)
+          .then(function(r) {
+            expect(r).toBe(true)
           })
           .catch(function() {
             expect(true).toBe(false)
