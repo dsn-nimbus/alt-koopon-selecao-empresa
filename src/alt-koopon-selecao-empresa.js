@@ -93,7 +93,7 @@
 
             if (produto.idStatusCrm == ID_STATUS_DEMONSTRACAO) {
               var finalDemonstracao = produto.dataFinalDemonstracao ? moment(produto.dataFinalDemonstracao, 'YYYY-MM-DD') : null;
-              demonstrativo = !!finalDemonstracao && finalDemonstracao.diff(moment(), 'days') >= 0;
+              demonstrativo = !!finalDemonstracao && finalDemonstracao.diff(moment().format('YYYY-MM-DD'), 'days') >= 0;
             }
 
             return produto.idStatusCrm == ID_STATUS_PLENO || demonstrativo;
