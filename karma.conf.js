@@ -24,6 +24,7 @@ module.exports = function(config) {
       'bower_components/alt-modal-service/dist/alt-modal-service.js',
       'bower_components/alt-passaporte-informacoes-autorizacao/dist/alt-passaporte-informacoes-autorizacao.min.js',
       'bower_components/ng-xtorage/ng-xtorage.min.js',
+      'bower_components/moment/min/moment.min.js',
 
       'bower_components/angular-mocks/angular-mocks.js',
 

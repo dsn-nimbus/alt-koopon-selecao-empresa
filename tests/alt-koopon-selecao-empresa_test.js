@@ -3,9 +3,9 @@ describe('alt.koopon.selecao-empresa', function() {
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
       _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper, _AltModalService,
       _EventoEmpresa, _assinanteKoopon, _assinanteKooponInadimplente, _assinanteKooponNaoPleno,
-      _kooponPermissaoAssinanteService;      
+      _kooponPermissaoAssinanteService, _moment;     
 
-  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
+  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_STATUS_BIMER_DEMONSTRACAO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
   var URL_PASSAPORTE = 'https://passaporte2.alterdata.com.br/minha-api/';
   var CHAVE_PRODUTO = 'abc123';
   var PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO = 'publico/assinantes/1/produtos/abc123'
@@ -25,10 +25,12 @@ describe('alt.koopon.selecao-empresa', function() {
     _http = $injector.get('$http');
     _httpBackend = $injector.get('$httpBackend');
     _xtorage = $injector.get('$xtorage');
+    _moment = $injector.get('moment');
 
     _locationMock = $injector.get('$location');
 
     ID_STATUS_BIMER_PLENO_ATENDIMENTO = $injector.get('ID_STATUS_BIMER_PLENO_ATENDIMENTO');
+    ID_STATUS_BIMER_DEMONSTRACAO = $injector.get('ID_STATUS_BIMER_DEMONSTRACAO');
     ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = $injector.get('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
@@ -321,7 +323,22 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush()
       })
 
-      it('deve retornar ok na consulta de assinante, mas assinante não tem acesso', function() {
+      it('deve retornar false - passaporte retorno sem conteúdo', function() {
+        var idExterno = '1';
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [])
+
+        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
+          .then(function(r) {
+            expect(r).toBe(false)
+          })
+          .catch(function() {
+            expect(true).toBe(false)
+          })
+
+        _httpBackend.flush()
+      })
+
+      it('deve retornar falso na consulta de assinante, mas assinante não tem acesso', function() {
         var idExterno = '1';
 
         _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [{nome: 'a', id: 1, idStatusCrm: 'xxx', produtos: [{nome: 'x'}]}])
@@ -337,10 +354,108 @@ describe('alt.koopon.selecao-empresa', function() {
         _httpBackend.flush()
       })
 
-      it('deve retornar ok na consulta de assinante, e assinante tem acesso ao produto', function() {
+      it('deve retornar falso - assinante está inadimplente', function() {
         var idExterno = '1';
 
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [{nome: 'a', id: 1, idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO, produtos: [{nome: 'x'}]}])
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
+          {
+            nome: 'a', id: 1,
+            inadimplenteCrm: true,
+            idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO
+          }
+        ]);
+
+        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
+          .then(function(r) {
+            expect(r).toBe(false)
+          })
+          .catch(function() {
+            expect(true).toBe(false)
+          })
+
+        _httpBackend.flush()
+      })
+
+      it('deve retornar falso - produto está como demonstrativo para assinante (sem data especificada)', function() {
+        var idExterno = '1';
+
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
+          {
+            nome: 'a', id: 1,
+            inadimplenteCrm: false,
+            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO
+          }
+        ]);
+
+        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
+          .then(function(r) {
+            expect(r).toBe(false)
+          })
+          .catch(function() {
+            expect(true).toBe(false)
+          })
+
+        _httpBackend.flush()
+      })
+
+      it('deve retornar falso - produto está como demonstrativo para assinante (data final expirada)', function() {
+        var idExterno = '1';
+        var dataFinalDemonstracao = _moment().subtract(1, 'day').format('YYYY-MM-DD');
+
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
+          {
+            nome: 'a', id: 1,
+            inadimplenteCrm: false,
+            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO,
+            dataFinalDemonstracao: dataFinalDemonstracao
+          }
+        ]);
+
+        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
+          .then(function(r) {
+            expect(r).toBe(false)
+          })
+          .catch(function() {
+            expect(true).toBe(false)
+          })
+
+        _httpBackend.flush()
+      })
+
+      it('deve retornar ok - produto está como demonstrativo para assinante (dentro do período)', function() {
+        var idExterno = '1';
+        var dataFinalDemonstracao = _moment().format('YYYY-MM-DD');
+
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
+          {
+            nome: 'a', id: 1,
+            inadimplenteCrm: false,
+            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO,
+            dataFinalDemonstracao: dataFinalDemonstracao
+          }
+        ]);
+
+        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
+          .then(function(r) {
+            expect(r).toBe(true)
+          })
+          .catch(function() {
+            expect(true).toBe(false)
+          })
+
+        _httpBackend.flush()
+      })
+
+      it('deve retornar ok - produto está em pleno atendimento', function() {
+        var idExterno = '1';
+
+        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
+          {
+            nome: 'a', id: 1,
+            inadimplenteCrm: false,
+            idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO
+          }
+        ]);
 
         _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
           .then(function(r) {

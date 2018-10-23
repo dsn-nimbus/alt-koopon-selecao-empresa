@@ -14,11 +14,13 @@
       $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
     }])
     .constant('ID_STATUS_BIMER_PLENO_ATENDIMENTO', '0010000001')
+    .constant('ID_STATUS_BIMER_DEMONSTRACAO', '0010000005')
     .constant('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO', '#alt-koopon-selecao-empresa-modal-inadimplencia')
     .constant('AltKooponEventoEmpresa', {
       EVENTO_EMPRESA_ESCOLHIDA: 'alt.koopon.empresa-escolhida',
       EVENTO_EMPRESA_NAO_CONFIGURADA: 'alt.koopon.empresa-nao-configurada'
     })
+    .constant('moment', moment)
     .provider('AltKooponSelecaoEmpresaPassaporteUrlBase', [function() {
       this.url = '';
 
@@ -72,7 +74,9 @@
       'AltKooponSelecaoEmpresaPassaporteUrlBase',
 	  'AltKooponSelecaoEmpresaChaveProduto',
       'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
-      function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO) {
+      'ID_STATUS_BIMER_DEMONSTRACAO',
+      'moment',
+      function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO, ID_STATUS_DEMONSTRACAO, moment) {
         this.temPermissaoAcesso = function(idExternoEmpresa) {
           return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'publico/assinantes/' + idExternoEmpresa + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
           .then(function(info) {
@@ -80,7 +84,19 @@
               return false;
             }
 
-            return info.data[0].idStatusCrm == ID_STATUS_PLENO && !info.data[0].inadimplenteCrm;
+            var produto = info.data[0];
+            var demonstrativo = false;
+
+            if (produto.inadimplenteCrm) {
+              return false;
+            }
+
+            if (produto.idStatusCrm == ID_STATUS_DEMONSTRACAO) {
+              var finalDemonstracao = produto.dataFinalDemonstracao ? moment(produto.dataFinalDemonstracao, 'YYYY-MM-DD') : null;
+              demonstrativo = !!finalDemonstracao && finalDemonstracao.diff(moment(), 'days') >= 0;
+            }
+
+            return produto.idStatusCrm == ID_STATUS_PLENO || demonstrativo;
           })
         };
     }])
