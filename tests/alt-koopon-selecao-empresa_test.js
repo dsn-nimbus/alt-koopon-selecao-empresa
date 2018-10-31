@@ -1,16 +1,12 @@
 describe('alt.koopon.selecao-empresa', function() {
   var _rootScope, _scope, _http, _q, _httpBackend, _locationMock, _xtorage,
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
-      _AltPassaporteProcuracaoService, _AltKooponSelecaoEmpresasHelper, _AltModalService,
-      _EventoEmpresa, _assinanteKoopon, _assinanteKooponInadimplente, _assinanteKooponNaoPleno,
-      _kooponPermissaoAssinanteService, _moment;     
+      _AltPassaporteProcuracaoService, _AltModalService, _EventoEmpresa, _assinanteKoopon;
 
-  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_STATUS_BIMER_DEMONSTRACAO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
+  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
   var URL_PASSAPORTE = 'https://passaporte2.alterdata.com.br/minha-api/';
   var CHAVE_PRODUTO = 'abc123';
-  var PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO = 'publico/assinantes/1/produtos/abc123'
-  var TOKEN_PASSAPORTE = 'xxxxxxxxxxxxxxxx123xxxxxxxxxxxxxxxxxx'
-  var URL_TOKEN_USUARIO = URL_PASSAPORTE + 'authorization/token'
+  var URL_BASE = '/koopon-contador-rest-api/assinantes/selecao';
 
   beforeEach(module('alt.koopon.selecao-empresa', function(AltKoopon_BASE_APIProvider, AltKooponSelecaoEmpresaPassaporteUrlBaseProvider, AltKooponSelecaoEmpresaChaveProdutoProvider) {
     AltKoopon_BASE_APIProvider.url = '/koopon-contador-rest-api/';
@@ -25,17 +21,14 @@ describe('alt.koopon.selecao-empresa', function() {
     _http = $injector.get('$http');
     _httpBackend = $injector.get('$httpBackend');
     _xtorage = $injector.get('$xtorage');
-    _moment = $injector.get('moment');
 
     _locationMock = $injector.get('$location');
 
     ID_STATUS_BIMER_PLENO_ATENDIMENTO = $injector.get('ID_STATUS_BIMER_PLENO_ATENDIMENTO');
-    ID_STATUS_BIMER_DEMONSTRACAO = $injector.get('ID_STATUS_BIMER_DEMONSTRACAO');
     ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = $injector.get('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
     _EventoEmpresa = $injector.get('AltKooponEventoEmpresa');
-    _kooponPermissaoAssinanteService = $injector.get('AltKooponBuscaAssinantePassaporteService');      
 
     _AltAlertaFlutuanteService = $injector.get('AltAlertaFlutuanteService');
     _AltKooponEmpresaService = $injector.get('AltKooponEmpresaService');
@@ -159,8 +152,6 @@ describe('alt.koopon.selecao-empresa', function() {
         spyOn(_locationMock, 'path').and.returnValue('/');
     });
 
-    var URL_BASE = '/koopon-contador-rest-api/assinantes/selecao';
-
     describe('criação', function() {
       it('deve ter o service como um objeto', function() {
         expect(typeof _AltKooponEmpresaService).toBe('object');
@@ -273,21 +264,18 @@ describe('alt.koopon.selecao-empresa', function() {
       it('deve chamar o endpoint corretamente e o passaporte deve retornar a empresa por id e chaveProduto', function() {
         var _empresa = {id: 1, qqcoisa: true};
         var _usuarioComEmpresaCompletaVindaDoPassaporte = {
-			nomUsuario: 'xxx', 
-			assinantes: [
-				{
-					id: 1, 
-					qqcoisa: true, 
-					outraCoisa: false, 
-					produtos: [{a: 1}, {a: 2}, {a: 3}]
-				}
-			]
-		};
-		var URL_ASSINANTE_PASSAPORTE = URL_PASSAPORTE + 'authorization/assinantes/' + _empresa.id + '/produtos/' + CHAVE_PRODUTO
+          nomUsuario: 'xxx', 
+          assinantes: [
+            {
+              id: 1,
+              qqcoisa: true,
+              outraCoisa: false,
+              produtos: [{a: 1}, {a: 2}, {a: 3}]
+            }
+          ]
+        };
 
-        _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200);
-		_httpBackend.expectGET(URL_TOKEN_USUARIO).respond(200, {token: TOKEN_PASSAPORTE});
-        _httpBackend.expectGET(URL_ASSINANTE_PASSAPORTE + '?token=' + TOKEN_PASSAPORTE).respond(200, _usuarioComEmpresaCompletaVindaDoPassaporte);		
+        _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200, {data: _usuarioComEmpresaCompletaVindaDoPassaporte});
 
         _AltKooponEmpresaService
         .escolhe(_empresa)
@@ -305,169 +293,6 @@ describe('alt.koopon.selecao-empresa', function() {
       });
     });
   });
-
-  describe('AltKooponBuscaAssinantePassaporteService', function() {
-    describe('temPermissaoAcesso', function() {
-      it('deve retornar false - passaporte retorna erro', function() {
-        var idExterno = '1';
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(400)
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function() {
-            expect(true).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(true)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar false - passaporte retorno sem conteúdo', function() {
-        var idExterno = '1';
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [])
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar falso na consulta de assinante, mas assinante não tem acesso', function() {
-        var idExterno = '1';
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [{nome: 'a', id: 1, idStatusCrm: 'xxx', produtos: [{nome: 'x'}]}])
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(info) {
-            expect(info).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar falso - assinante está inadimplente', function() {
-        var idExterno = '1';
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
-          {
-            nome: 'a', id: 1,
-            inadimplenteCrm: true,
-            idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO
-          }
-        ]);
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar falso - produto está como demonstrativo para assinante (sem data especificada)', function() {
-        var idExterno = '1';
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
-          {
-            nome: 'a', id: 1,
-            inadimplenteCrm: false,
-            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO
-          }
-        ]);
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar falso - produto está como demonstrativo para assinante (data final expirada)', function() {
-        var idExterno = '1';
-        var dataFinalDemonstracao = _moment().subtract(1, 'day').format('YYYY-MM-DD');
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
-          {
-            nome: 'a', id: 1,
-            inadimplenteCrm: false,
-            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO,
-            dataFinalDemonstracao: dataFinalDemonstracao
-          }
-        ]);
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(false)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar ok - produto está como demonstrativo para assinante (dentro do período)', function() {
-        var idExterno = '1';
-        var dataFinalDemonstracao = _moment().format('YYYY-MM-DD');
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
-          {
-            nome: 'a', id: 1,
-            inadimplenteCrm: false,
-            idStatusCrm: ID_STATUS_BIMER_DEMONSTRACAO,
-            dataFinalDemonstracao: dataFinalDemonstracao
-          }
-        ]);
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(true)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-
-      it('deve retornar ok - produto está em pleno atendimento', function() {
-        var idExterno = '1';
-
-        _httpBackend.expectGET(URL_PASSAPORTE + PEDACO_URL_CHAMADA_PASSAPORTE_PERMISSAO_ASSINANTE_ESPECIFICO).respond(200, [
-          {
-            nome: 'a', id: 1,
-            inadimplenteCrm: false,
-            idStatusCrm: ID_STATUS_BIMER_PLENO_ATENDIMENTO
-          }
-        ]);
-
-        _kooponPermissaoAssinanteService.temPermissaoAcesso(idExterno)
-          .then(function(r) {
-            expect(r).toBe(true)
-          })
-          .catch(function() {
-            expect(true).toBe(false)
-          })
-
-        _httpBackend.flush()
-      })
-    })
 
     describe('controller', function() {
       beforeEach(function() {
@@ -516,7 +341,6 @@ describe('alt.koopon.selecao-empresa', function() {
             var _empresa = [{nome: 'a', id: 1, idExterno: '438694'}];
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.reject({mensagem: 'abc'})
             });
@@ -536,7 +360,6 @@ describe('alt.koopon.selecao-empresa', function() {
             var _empresa = [{nome: 'a', id: 1, idExterno: '438694'}];
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.when({ok: true});
             });
@@ -555,7 +378,6 @@ describe('alt.koopon.selecao-empresa', function() {
         it('deve buscar apenas uma empresa, buscando com a propriedade passada por parâmetro', inject(function($controller) {
             var _empresa = [{nome: 'a', id: 1, idExterno: _assinanteKoopon.idExterno}];
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.when({ok: true})
             });
@@ -578,7 +400,6 @@ describe('alt.koopon.selecao-empresa', function() {
             var _empresa = [{nome: 'a', id: 1}];
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.reject({mensagem: 'abc'})
             });
@@ -601,7 +422,6 @@ describe('alt.koopon.selecao-empresa', function() {
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
             spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.when(_empresaRespostaPassaporte)
             });
@@ -624,7 +444,6 @@ describe('alt.koopon.selecao-empresa', function() {
 
             spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresas);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.when(_empresaRespostaPassaporte)
             });
@@ -655,7 +474,6 @@ describe('alt.koopon.selecao-empresa', function() {
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
             spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
             spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(true))
 
             spyOn(_AltKooponEmpresaService, 'escolhe').and.callFake(function() {
               return _q.when(_empresaRespostaPassaporte)
@@ -678,23 +496,20 @@ describe('alt.koopon.selecao-empresa', function() {
             expect(_scope.ctrl.escolheEmpresa).toHaveBeenCalled();
         }));
 
-        it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna ok - sem permissao acesso', inject(function($controller) {
+        it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna 403', inject(function($controller) {
             var _empresa = [{nome: 'a', id: 1}];
-            var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
-            spyOn(_AltKooponEmpresaService, 'salvaNaStorageEmpresaEscolhida').and.callFake(angular.noop);
-            spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
-            spyOn(_kooponPermissaoAssinanteService, 'temPermissaoAcesso').and.returnValue(_q.when(false))
 
+            spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
             spyOn(_AltModalService, 'open').and.callFake(angular.noop);
+
+            _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa[0].id}).respond(403);
 
             $controller(NOME_CONTROLLER, {$scope: _scope});
 
-            spyOn(_scope.ctrl, 'escolheEmpresa').and.callThrough();
-
             _rootScope.$digest();
-
             _scope.ctrl.escolheEmpresa(_empresa[0]);
 
+            _httpBackend.flush();
             _rootScope.$digest();
 
             expect(_AltModalService.open).toHaveBeenCalledWith(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
@@ -741,5 +556,5 @@ describe('alt.koopon.selecao-empresa', function() {
         }));
       });
     })
-  })
+
 })

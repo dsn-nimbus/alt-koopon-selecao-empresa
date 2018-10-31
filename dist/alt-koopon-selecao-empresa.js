@@ -14,13 +14,11 @@
       $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
     }])
     .constant('ID_STATUS_BIMER_PLENO_ATENDIMENTO', '0010000001')
-    .constant('ID_STATUS_BIMER_DEMONSTRACAO', '0010000005')
     .constant('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO', '#alt-koopon-selecao-empresa-modal-inadimplencia')
     .constant('AltKooponEventoEmpresa', {
       EVENTO_EMPRESA_ESCOLHIDA: 'alt.koopon.empresa-escolhida',
       EVENTO_EMPRESA_NAO_CONFIGURADA: 'alt.koopon.empresa-nao-configurada'
     })
-    .constant('moment', moment)
     .provider('AltKooponSelecaoEmpresaPassaporteUrlBase', [function() {
       this.url = '';
 
@@ -69,37 +67,6 @@
 
       return $resource(_url, _params, _methods);
     }])
-    .service('AltKooponBuscaAssinantePassaporteService', [
-      '$http',
-      'AltKooponSelecaoEmpresaPassaporteUrlBase',
-	  'AltKooponSelecaoEmpresaChaveProduto',
-      'ID_STATUS_BIMER_PLENO_ATENDIMENTO',
-      'ID_STATUS_BIMER_DEMONSTRACAO',
-      'moment',
-      function($http, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto, ID_STATUS_PLENO, ID_STATUS_DEMONSTRACAO, moment) {
-        this.temPermissaoAcesso = function(idExternoEmpresa) {
-          return $http.get(AltKooponSelecaoEmpresaPassaporteUrlBase + 'publico/assinantes/' + idExternoEmpresa + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto)
-          .then(function(info) {
-            if (!info || !info.data || !info.data.length) {
-              return false;
-            }
-
-            var produto = info.data[0];
-            var demonstrativo = false;
-
-            if (produto.inadimplenteCrm) {
-              return false;
-            }
-
-            if (produto.idStatusCrm == ID_STATUS_DEMONSTRACAO) {
-              var finalDemonstracao = produto.dataFinalDemonstracao ? moment(produto.dataFinalDemonstracao, 'YYYY-MM-DD') : null;
-              demonstrativo = !!finalDemonstracao && finalDemonstracao.diff(moment().format('YYYY-MM-DD'), 'days') >= 0;
-            }
-
-            return produto.idStatusCrm == ID_STATUS_PLENO || demonstrativo;
-          })
-        };
-    }])
     .factory('AltKooponEmpresaService', ['$rootScope', '$http', '$q', '$xtorage', 'AltPassaporteUsuarioLogadoManager', 'AltKooponEmpresaResource', 'AltKooponEventoEmpresa', 'AltKooponSelecaoEmpresaPassaporteUrlBase', 'AltKooponSelecaoEmpresaChaveProduto',
       function($rootScope, $http, $q, $xtorage, AltPassaporteUsuarioLogadoManager, AltKooponEmpresaResource, AltKooponEventoEmpresa, AltKooponSelecaoEmpresaPassaporteUrlBase, AltKooponSelecaoEmpresaChaveProduto) {
 
@@ -133,18 +100,9 @@
           return AltKooponEmpresaResource
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
-            .then(function() {
-			  const URL_TOKEN_USUARIO = AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/token';
-			  const URL_ASSINANTE_PASSAPORTE = AltKooponSelecaoEmpresaPassaporteUrlBase + 'authorization/assinantes/' + empresa.id + '/produtos/' + AltKooponSelecaoEmpresaChaveProduto;
-			  
-			  return $http.get(URL_TOKEN_USUARIO)
-				.then(function(infoToken) {
-					return $http.get(URL_ASSINANTE_PASSAPORTE + '?token=' + infoToken.data.token)
-					  .then(function(infoUsuario) {
-						$rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, infoUsuario.data.assinantes[0]);
-						return infoUsuario.data.assinantes[0];
-					  });
-				});
+            .then(function(infoUsuario) {
+              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, infoUsuario.data.assinantes[0]);
+              return infoUsuario.data.assinantes[0];
             });
         };
 
@@ -162,13 +120,12 @@
     }])
     .controller('AltKooponSelecaoEmpresasController', [
       'AltKooponSelecaoEmpresasHelper',
-      'AltKooponBuscaAssinantePassaporteService',
       'AltKooponEmpresaService',
       'AltAlertaFlutuanteService',
       'AltCarregandoInfoService',
       'AltModalService',
       'ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO',
-      function(AltKooponSelecaoEmpresasHelper, AltKooponBuscaAssinantePassaporteService, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
+      function(AltKooponSelecaoEmpresasHelper, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
         var self = this;
 
         self.empresas = [];
@@ -176,24 +133,21 @@
         self.escolheEmpresa = function(empresa) {
           AltCarregandoInfoService.exibe();
 
-          AltKooponBuscaAssinantePassaporteService.temPermissaoAcesso(empresa.idExterno)
-          .then(function(temPermissao) {
-            if (temPermissao) {
-              return AltKooponSelecaoEmpresasHelper
-                .escolheEmpresaSemProcuracao(empresa)
-                .catch(function(erro) {
-                  AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
-                })
-                .finally(function() {
-                  AltCarregandoInfoService.esconde();
+          return AltKooponSelecaoEmpresasHelper
+            .escolheEmpresaSemProcuracao(empresa)
+            .catch(function(erro) {
+              if (erro.status === 403) {
+                AltModalService.open(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
+                  backdrop: 'static'
                 });
-            } else {
+              }
+              else {
+                AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
+              }
+            })
+            .finally(function() {
               AltCarregandoInfoService.esconde();
-              AltModalService.open(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
-                backdrop: 'static'
-              });
-            }
-          })
+            });
         };
 
         self.init = function(emp) {
