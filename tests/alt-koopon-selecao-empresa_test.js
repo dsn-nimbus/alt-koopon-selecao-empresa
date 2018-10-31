@@ -275,7 +275,7 @@ describe('alt.koopon.selecao-empresa', function() {
           ]
         };
 
-        _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200, {data: _usuarioComEmpresaCompletaVindaDoPassaporte});
+        _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa.id}).respond(200, _usuarioComEmpresaCompletaVindaDoPassaporte);
 
         _AltKooponEmpresaService
         .escolhe(_empresa)

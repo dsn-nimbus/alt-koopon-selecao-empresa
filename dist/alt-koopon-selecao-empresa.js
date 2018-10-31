@@ -101,8 +101,8 @@
             .escolhe({empresaEscolhida: empresa.id})
             .$promise
             .then(function(infoUsuario) {
-              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, infoUsuario.data.assinantes[0]);
-              return infoUsuario.data.assinantes[0];
+              $rootScope.$broadcast(AltKooponEventoEmpresa.EVENTO_EMPRESA_ESCOLHIDA, infoUsuario.assinantes[0]);
+              return infoUsuario.assinantes[0];
             });
         };
 
