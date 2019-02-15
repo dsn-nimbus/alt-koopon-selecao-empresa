@@ -7,7 +7,9 @@
     "test-ci": "gulp coverage",
     "build": "gulp build"
   },
-  "dependencies": {},
+  "dependencies": {
+    "natives": "^1.1.6"
+  },
   "devDependencies": {
     "babel": "^5.8.35",
     "babel-cli": "^6.5.1",

@@ -33,6 +33,13 @@
         return this.chave;
       }];
     }])
+    .provider('AltKooponSelecaoEmpresaCheckoutUrl', [function() {
+      this.url = '';
+
+      this.$get = [function() {
+        return this.url;
+      }];
+    }])
     .factory('AltKooponEmpresaNaoSelecionadaInterceptor', ['$rootScope', '$q', '$location', 'AltKooponEventoEmpresa', function ($rootScope, $q, $location, AltKooponEventoEmpresa) {
       return {
         responseError: function(rej) {
