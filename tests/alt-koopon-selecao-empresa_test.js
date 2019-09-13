@@ -3,7 +3,7 @@ describe('alt.koopon.selecao-empresa', function() {
       _AltKooponEmpresaService, _AltAlertaFlutuanteService, _AltPassaporteUsuarioLogadoManager,
       _AltPassaporteProcuracaoService, _AltModalService, _EventoEmpresa, _assinanteKoopon;
 
-  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO;
+  var ID_STATUS_BIMER_PLENO_ATENDIMENTO, ID_MODAL_EMPRESA_INADIMPLENCIA, ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA;
   var URL_PASSAPORTE = 'https://passaporte2.alterdata.com.br/minha-api/';
   var CHAVE_PRODUTO = 'abc123';
   var URL_BASE = '/koopon-contador-rest-api/assinantes/selecao';
@@ -25,7 +25,8 @@ describe('alt.koopon.selecao-empresa', function() {
     _locationMock = $injector.get('$location');
 
     ID_STATUS_BIMER_PLENO_ATENDIMENTO = $injector.get('ID_STATUS_BIMER_PLENO_ATENDIMENTO');
-    ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO = $injector.get('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO');
+    ID_MODAL_EMPRESA_INADIMPLENCIA = $injector.get('ID_MODAL_EMPRESA_INADIMPLENCIA');
+    ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA = $injector.get('ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA');
 
     _AltPassaporteUsuarioLogadoManager = $injector.get('AltPassaporteUsuarioLogadoManager');
     _EventoEmpresa = $injector.get('AltKooponEventoEmpresa');
@@ -72,7 +73,8 @@ describe('alt.koopon.selecao-empresa', function() {
   describe('constantes', function() {
     it('deve ter os valores corretos para as constantes', function() {
       expect(ID_STATUS_BIMER_PLENO_ATENDIMENTO).toBe('0010000001');
-      expect(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO).toBe('#alt-koopon-selecao-empresa-modal-inadimplencia');
+      expect(ID_MODAL_EMPRESA_INADIMPLENCIA).toBe('#alt-koopon-selecao-empresa-modal-inadimplencia');
+      expect(ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA).toBe('#alt-koopon-selecao-empresa-modal-demonstracao-expirada');
     });
   });
 
@@ -395,7 +397,7 @@ describe('alt.koopon.selecao-empresa', function() {
         }));
       });
 
-      describe('escolheEmpresa', function() {
+      fdescribe('escolheEmpresa', function() {
         it('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado, mas service retorna erro', inject(function($controller) {
             var _empresa = [{nome: 'a', id: 1}];
             var _empresaRespostaPassaporte = {nome: 'a', produtos: [{nome: 'p1'}, {nome: 'p2'}, {nome: 'p3'}]}
@@ -512,10 +514,29 @@ describe('alt.koopon.selecao-empresa', function() {
             _httpBackend.flush();
             _rootScope.$digest();
 
-            expect(_AltModalService.open).toHaveBeenCalledWith(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
-              backdrop: 'static'
-            });
+            expect(_AltModalService.open).toHaveBeenCalledWith(ID_MODAL_EMPRESA_INADIMPLENCIA);
         }));
+
+        fit('deve buscar apenas uma empresa, AltKooponEmpresaService.escolhe deve ser ativado e service retorna 403 com status de demonstração expirada', inject(function($controller) {
+          var _empresa = [{nome: 'a', id: 1}];
+
+          spyOn(_AltKooponEmpresaService, 'getEmpresas').and.returnValue(_empresa);
+          spyOn(_AltModalService, 'open').and.callFake(angular.noop);
+
+          _httpBackend.expectPOST(URL_BASE, {empresaEscolhida: _empresa[0].id}).respond(403, {
+            mensagem: 'DEMONSTRACAO_EXPIRADA'
+          });
+
+          $controller(NOME_CONTROLLER, {$scope: _scope});
+
+          _rootScope.$digest();
+          _scope.ctrl.escolheEmpresa(_empresa[0]);
+
+          _httpBackend.flush();
+          _rootScope.$digest();
+
+          expect(_AltModalService.open).toHaveBeenCalledWith(ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA);
+      }));
       });
     });
 

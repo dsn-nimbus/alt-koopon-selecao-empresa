@@ -151,7 +151,8 @@
             .escolheEmpresaSemProcuracao(empresa)
             .catch(function(erro) {
               if (erro.status === 403) {
-                if (erro.mensagem === AltKooponMotivoAcessoNegado.DEMONSTRACAO_EXPIRADA) {
+                if (erro.mensagem === AltKooponMotivoAcessoNegado.DEMONSTRACAO_EXPIRADA || (
+                    !!erro.data && erro.data.mensagem === AltKooponMotivoAcessoNegado.DEMONSTRACAO_EXPIRADA)) {
                   AltModalService.open(ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA);
                 }
                 else {
