@@ -14,10 +14,15 @@
       $httpProvider.interceptors.push('AltKooponEmpresaNaoSelecionadaInterceptor');
     }])
     .constant('ID_STATUS_BIMER_PLENO_ATENDIMENTO', '0010000001')
-    .constant('ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO', '#alt-koopon-selecao-empresa-modal-inadimplencia')
+    .constant('ID_MODAL_EMPRESA_INADIMPLENCIA', '#alt-koopon-selecao-empresa-modal-inadimplencia')
+    .constant('ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA', '#alt-koopon-selecao-empresa-modal-demonstracao-expirada')
     .constant('AltKooponEventoEmpresa', {
       EVENTO_EMPRESA_ESCOLHIDA: 'alt.koopon.empresa-escolhida',
       EVENTO_EMPRESA_NAO_CONFIGURADA: 'alt.koopon.empresa-nao-configurada'
+    })
+    .constant('AltKooponMotivoAcessoNegado', {
+      PENDENCIAS_ADMINISTRATIVAS: 'PENDENCIAS_ADMINISTRATIVAS',
+      DEMONSTRACAO_EXPIRADA: 'DEMONSTRACAO_EXPIRADA',
     })
     .provider('AltKooponSelecaoEmpresaPassaporteUrlBase', [function() {
       this.url = '';
@@ -131,8 +136,10 @@
       'AltAlertaFlutuanteService',
       'AltCarregandoInfoService',
       'AltModalService',
-      'ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO',
-      function(AltKooponSelecaoEmpresasHelper, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO) {
+      'AltKooponMotivoAcessoNegado',
+      'ID_MODAL_EMPRESA_INADIMPLENCIA',
+      'ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA',
+      function(AltKooponSelecaoEmpresasHelper, AltKooponEmpresaService, AltAlertaFlutuanteService, AltCarregandoInfoService, AltModalService, AltKooponMotivoAcessoNegado, ID_MODAL_EMPRESA_INADIMPLENCIA, ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA) {
         var self = this;
 
         self.empresas = [];
@@ -144,9 +151,12 @@
             .escolheEmpresaSemProcuracao(empresa)
             .catch(function(erro) {
               if (erro.status === 403) {
-                AltModalService.open(ID_MODAL_EMPRESA_SEM_PERMISSAO_ACESSO, {
-                  backdrop: 'static'
-                });
+                if (erro.mensagem === AltKooponMotivoAcessoNegado.DEMONSTRACAO_EXPIRADA) {
+                  AltModalService.open(ID_MODAL_EMPRESA_DEMONSTRACAO_EXPIRADA);
+                }
+                else {
+                  AltModalService.open(ID_MODAL_EMPRESA_INADIMPLENCIA);
+                }
               }
               else {
                 AltAlertaFlutuanteService.exibe({msg: erro.mensagem});
